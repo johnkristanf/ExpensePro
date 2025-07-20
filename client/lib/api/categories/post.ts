@@ -1,0 +1,18 @@
+import { CategoriesCreate } from '@/types/categories'
+
+export async function createCategory(data: CategoriesCreate) {
+    const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/categories`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(data),
+    })
+
+    if (!response.ok) {
+        const resp = await response.json()
+        throw new Error(resp.error)
+    }
+
+    return response.json()
+}

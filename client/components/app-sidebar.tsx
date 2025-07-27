@@ -32,6 +32,11 @@ const data = {
                     title: 'Categories',
                     url: '/categories',
                 },
+
+                {
+                    title: 'Savings',
+                    url: '/savings',
+                },
             ],
         },
     ],

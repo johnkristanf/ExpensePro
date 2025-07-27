@@ -13,6 +13,8 @@ import { SpendingType } from '@/enums/expenses'
 import { fetchCategories } from '@/lib/api/categories/get'
 import { columns } from './column'
 import { fetchExpenses } from '@/lib/api/expenses/get'
+import { fetchBudgets } from '@/lib/api/budgets/get'
+import { BudgetFetchComponent } from '@/enums/budgets'
 
 export default function ExpensesPage() {
     const queryClient = useQueryClient()
@@ -21,6 +23,14 @@ export default function ExpensesPage() {
     const { data: categories, isLoading: isCategoriesLoading } = useQuery({
         queryKey: ['categories'],
         queryFn: fetchCategories,
+    })
+
+    // FETCH BUDGETS CATEGORIES
+    const { data: budgets, isLoading: isBudgetsLoading } = useQuery({
+        queryKey: ['budgets'],
+        queryFn: async () => {
+            return await fetchBudgets(BudgetFetchComponent.DROPDOWN)
+        },
     })
 
     // FETCH EXPENSES
@@ -65,6 +75,18 @@ export default function ExpensesPage() {
                                 categories.map((cat) => ({
                                     label: cat.name,
                                     value: cat.id.toString(),
+                                })),
+                        },
+
+                        {
+                            name: 'budget_id',
+                            label: 'Budget',
+                            type: InputType.SELECT,
+                            options:
+                                budgets &&
+                                budgets.map((budget) => ({
+                                    label: budget.name,
+                                    value: budget.id.toString(),
                                 })),
                         },
 

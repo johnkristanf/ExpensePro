@@ -5,6 +5,18 @@ export function cn(...inputs: ClassValue[]) {
     return twMerge(clsx(inputs))
 }
 
+export function formatNumericDateToWordDate(dateStr: string) {
+    const date = new Date(dateStr)
+
+    const formatted = new Intl.DateTimeFormat('en-US', {
+        year: 'numeric',
+        month: 'short',
+        day: '2-digit',
+    }).format(date)
+
+    return formatted
+}
+
 export function formatDateLocaleShort(date: string, locale = 'en-US') {
     const d = new Date(date)
     const month = d.toLocaleString(locale, { month: '2-digit' })

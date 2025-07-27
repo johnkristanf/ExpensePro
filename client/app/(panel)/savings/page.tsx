@@ -6,7 +6,7 @@ import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip
 
 import { Progress } from '@/components/ui/progress'
 import { Pencil, Trash } from 'lucide-react'
-import { formatAmount } from '@/lib/utils'
+import { formatAmount, formatNumericDateToWordDate } from '@/lib/utils'
 import FormDialog from '@/components/form-dialog'
 import { FieldInputType, InputType } from '@/enums/form'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
@@ -49,7 +49,7 @@ export default function SavingsPage() {
             {/* CREATE SAVINGS FORM BUTTON TRIGGER */}
             <div className="flex justify-end">
                 <FormDialog
-                    triggerLabel="Create Savings"
+                    triggerLabel="Create Saving"
                     title="New Savings"
                     onSubmit={(data) => handleCreateSavings(data)}
                     fields={[
@@ -92,7 +92,7 @@ export default function SavingsPage() {
                 />
             </div>
 
-            {/* SAVINGS DATA CARD */} 
+            {/* SAVINGS DATA CARD */}
             <div className="h-[70vh] grid md:grid-cols-2 gap-5 mt-5 overflow-y-scroll">
                 {/* SAVINGS LOADER */}
                 {isSavingsLoading && <TextLoader text="Loading Savings..." />}
@@ -105,8 +105,8 @@ export default function SavingsPage() {
                                 <CardTitle>{saving.goal_name}</CardTitle>
 
                                 <div className="flex flex-col gap-1 text-sm mt-1">
-                                    <h1>Start Date: {saving.start_date}</h1>
-                                    <h1>Target Date: {saving.target_date}</h1>
+                                    <h1>Start Date: {formatNumericDateToWordDate(saving.start_date)}</h1>
+                                    <h1>Target Date: {formatNumericDateToWordDate(saving.target_date)}</h1>
                                 </div>
 
                                 <CardAction>

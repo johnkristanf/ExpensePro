@@ -19,17 +19,6 @@ import TextLoader from '@/components/text-loader'
 export default function SavingsPage() {
     const queryClient = useQueryClient()
 
-    const dummySavings = [
-        {
-            id: 1,
-            goal_name: 'Emergency Fund',
-            target_amount: 9000,
-            current_amount: 2000,
-            start_date: '07/27/25',
-            target_date: '10/27/25',
-        },
-    ]
-
     // FETCH SAVINGS
     const { data: savings, isLoading: isSavingsLoading } = useQuery({
         queryKey: ['savings'],
@@ -52,6 +41,7 @@ export default function SavingsPage() {
     const handleCreateSavings = (data: SavingsCreate) => {
         mutation.mutate(data)
     }
+
     return (
         <div className="container mx-auto py-5">
             <PageTitle title="Savings" />
@@ -110,11 +100,11 @@ export default function SavingsPage() {
                 {/* SAVINGS CARD */}
                 {savings &&
                     savings.map((saving) => (
-                        <Card key={saving.id} className="w-full md:max-w-md md:max-h-40">
+                        <Card key={saving.id} className="w-full md:max-w-md md:max-h-44">
                             <CardHeader>
                                 <CardTitle>{saving.goal_name}</CardTitle>
 
-                                <div className="flex justify-between text-sm mt-1">
+                                <div className="flex flex-col gap-1 text-sm mt-1">
                                     <h1>Start Date: {saving.start_date}</h1>
                                     <h1>Target Date: {saving.target_date}</h1>
                                 </div>

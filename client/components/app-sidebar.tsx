@@ -34,6 +34,11 @@ const data = {
                 },
 
                 {
+                    title: 'Budgets',
+                    url: '/budgets',
+                },
+
+                {
                     title: 'Savings',
                     url: '/savings',
                 },

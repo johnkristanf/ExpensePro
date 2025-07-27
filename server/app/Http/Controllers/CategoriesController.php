@@ -10,7 +10,6 @@ class CategoriesController extends Controller
 {
     public function index()
     {
-        Log::info("wewe");
         $categories = Categories::latest()->get();
         return response()->json(
             $categories

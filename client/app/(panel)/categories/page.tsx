@@ -10,6 +10,7 @@ import { createCategory } from '@/lib/api/categories/post'
 import { toast } from 'sonner'
 import { fetchCategories } from '@/lib/api/categories/get'
 import TextLoader from '@/components/text-loader'
+import { FieldInputType, InputType } from '@/enums/form'
 
 export default function CategoriesPage() {
     const queryClient = useQueryClient()
@@ -19,7 +20,6 @@ export default function CategoriesPage() {
         queryKey: ['categories'],
         queryFn: fetchCategories,
     })
-    console.log('categories: ', data)
 
     // CREATE CATEGORY MUTATION
     const mutation = useMutation({
@@ -41,30 +41,32 @@ export default function CategoriesPage() {
     return (
         <div className="container mx-auto py-5">
             <PageTitle title="Categories" />
+
             <div className="flex justify-end mb-3">
                 <FormDialog
                     triggerLabel="Create Category"
-                    title="Add New Category"
+                    title="New Category"
                     onSubmit={(data) => handleCreateCategory(data)}
                     fields={[
                         {
                             name: 'name',
                             label: 'Category Name',
-                            type: 'input',
+                            type: InputType.INPUT,
+                            inputType: FieldInputType.TEXT,
                             placeholder: 'e.g. Groceries',
                         },
                         {
                             name: 'notes',
                             label: 'Notes',
-                            type: 'textarea',
+                            type: InputType.TEXTAREA,
                             placeholder: 'Optional notes...',
                         },
                     ]}
                 />
             </div>
 
-            {isLoading ? (
-                <TextLoader text='Loading Categories...' />
+            {isLoading || !data ? (
+                <TextLoader text="Loading Categories..." />
             ) : (
                 <DataTable columns={columns} data={data} />
             )}

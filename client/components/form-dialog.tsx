@@ -31,11 +31,12 @@ type FormDialogProps = {
 export default function FormDialog({ triggerLabel, title, fields, onSubmit }: FormDialogProps) {
     const [open, setOpen] = useState(false)
 
-    const { register, handleSubmit, setValue, watch } = useForm()
+    const { register, handleSubmit, reset, setValue, watch } = useForm()
 
     const handleFormSubmit: SubmitHandler<any> = (data) => {
-        onSubmit(data)
-        setOpen(false)
+        onSubmit(data);
+        setOpen(false);
+        reset();
     }
     return (
         <Dialog open={open} onOpenChange={setOpen}>
@@ -47,7 +48,7 @@ export default function FormDialog({ triggerLabel, title, fields, onSubmit }: Fo
                     <DialogTitle>{title}</DialogTitle>
                 </DialogHeader>
                 <form onSubmit={handleSubmit(handleFormSubmit)} className="space-y-4">
-                    {fields.map((field) => {
+                    {fields && fields.map((field) => {
                         const value = watch(field.name)
 
                         switch (field.type) {
@@ -56,6 +57,7 @@ export default function FormDialog({ triggerLabel, title, fields, onSubmit }: Fo
                                     <div key={field.name}>
                                         <label className="block mb-2">{field.label}</label>
                                         <Input
+                                            type={field.inputType && field.inputType}
                                             {...register(field.name)}
                                             placeholder={field.placeholder}
                                             defaultValue={field.defaultValue}

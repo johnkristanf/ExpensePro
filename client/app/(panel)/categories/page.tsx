@@ -66,7 +66,9 @@ export default function CategoriesPage() {
             </div>
 
             {isLoading || !data ? (
-                <TextLoader text="Loading Categories..." />
+                <div className="flex justify-center">
+                    <TextLoader text="Loading Categories..." />
+                </div>
             ) : (
                 <DataTable columns={columns} data={data} />
             )}

@@ -92,21 +92,37 @@ export default function SavingsPage() {
                 />
             </div>
 
+            {/* SAVINGS LOADER */}
+            {isSavingsLoading && (
+                <div className="flex justify-center mt-10">
+                    <TextLoader text="Loading Savings..." />
+                </div>
+            )}
+
+            {savings && savings.length === 0 ? (
+                <div className="text-center mt-10 text-muted-foreground text-md">
+                    No savings found.
+                </div>
+            ) : null}
+
             {/* SAVINGS DATA CARD */}
             <div className="h-[70vh] grid md:grid-cols-2 gap-5 mt-5 overflow-y-scroll">
-                {/* SAVINGS LOADER */}
-                {isSavingsLoading && <TextLoader text="Loading Savings..." />}
-
                 {/* SAVINGS CARD */}
                 {savings &&
+                    savings.length > 0 &&
                     savings.map((saving) => (
                         <Card key={saving.id} className="w-full md:max-w-md md:max-h-44">
                             <CardHeader>
                                 <CardTitle>{saving.goal_name}</CardTitle>
 
                                 <div className="flex flex-col gap-1 text-sm mt-1">
-                                    <h1>Start Date: {formatNumericDateToWordDate(saving.start_date)}</h1>
-                                    <h1>Target Date: {formatNumericDateToWordDate(saving.target_date)}</h1>
+                                    <h1>
+                                        Start Date: {formatNumericDateToWordDate(saving.start_date)}
+                                    </h1>
+                                    <h1>
+                                        Target Date:{' '}
+                                        {formatNumericDateToWordDate(saving.target_date)}
+                                    </h1>
                                 </div>
 
                                 <CardAction>

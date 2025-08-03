@@ -25,6 +25,10 @@ const data = {
             url: '#',
             items: [
                 {
+                    title: 'Dashboard',
+                    url: '/dashboard',
+                },
+                {
                     title: 'Expenses',
                     url: '/expenses',
                 },
@@ -41,6 +45,11 @@ const data = {
                 {
                     title: 'Savings',
                     url: '/savings',
+                },
+
+                {
+                    title: 'Income',
+                    url: '/income',
                 },
             ],
         },

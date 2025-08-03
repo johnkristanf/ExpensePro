@@ -9,6 +9,7 @@ import {
 } from '@/components/ui/dropdown-menu'
 import { MoreHorizontal } from 'lucide-react'
 import { Categories } from '@/types/categories'
+import { formatDateLocaleShort } from '@/lib/utils'
 
 export const columns: ColumnDef<Categories>[] = [
     {
@@ -26,6 +27,10 @@ export const columns: ColumnDef<Categories>[] = [
     {
         accessorKey: 'created_at',
         header: 'Date Created',
+        cell: ({ row }) => {
+            const original = row.original
+            return <span>{formatDateLocaleShort(original.created_at)}</span>
+        },
     },
 
     {

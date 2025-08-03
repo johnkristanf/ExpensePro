@@ -64,7 +64,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
                     <Image
                         src={'/ExpensProLogo.png'}
                         alt="ExpensePro Logo"
-                        className="bg-primary rounded-md"
+                        className="rounded-md"
                         width={40}
                         height={40}
                     />

@@ -3,7 +3,7 @@
 import DataTable from '@/components/data-table'
 import { columns } from './columns'
 import PageTitle from '@/components/page-title'
-import FormDialog from '@/components/form-dialog'
+import FormDialog from '@/components/create-form-dialog'
 import { CategoriesCreate } from '@/types/categories'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { createCategory } from '@/lib/api/categories/post'

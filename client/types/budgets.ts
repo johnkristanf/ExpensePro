@@ -11,3 +11,10 @@ export type BudgetCreate = {
     total_amount: number
     budget_period: string
 }
+
+export type BudgetEdit = {
+    id: number
+    name: string
+    total_amount: number
+    budget_period: string
+}

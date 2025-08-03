@@ -16,3 +16,4 @@ export async function createBudget(data: BudgetCreate) {
 
     return response.json()
 }
+

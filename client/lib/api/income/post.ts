@@ -11,7 +11,7 @@ export async function createIncome(data: IncomeCreate) {
 
     if (!response.ok) {
         const resp = await response.json()
-        throw new Error(resp.error)
+        throw new Error(resp.errors ?? resp.error)
     }
 
     return response.json()

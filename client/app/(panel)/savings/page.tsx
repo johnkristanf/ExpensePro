@@ -7,14 +7,17 @@ import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip
 import { Progress } from '@/components/ui/progress'
 import { Pencil, Trash } from 'lucide-react'
 import { formatAmount, formatNumericDateToWordDate } from '@/lib/utils'
-import FormDialog from '@/components/form-dialog'
+import FormDialog from '@/components/create-form-dialog'
 import { FieldInputType, InputType } from '@/enums/form'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { toast } from 'sonner'
 import { createSavings } from '@/lib/api/savings/post'
-import { SavingsCreate } from '@/types/savings'
+import { Savings, SavingsCreate, SavingsEdit } from '@/types/savings'
 import { fetchSavings } from '@/lib/api/savings/get'
 import TextLoader from '@/components/text-loader'
+import { FieldSchema } from '@/types/form'
+import EditFormDialog from '@/components/edit-form-dialog'
+import { editSavings } from '@/lib/api/savings/patch'
 
 export default function SavingsPage() {
     const queryClient = useQueryClient()
@@ -42,6 +45,72 @@ export default function SavingsPage() {
         mutation.mutate(data)
     }
 
+    // EDIT SAVINGS MUTATION
+    const editMutation = useMutation({
+        mutationFn: editSavings,
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: ['savings'] })
+            toast.success('Savings Edited Successfully')
+        },
+
+        onError: (error) => {
+            toast.error(error.message)
+        },
+    })
+
+    const handleEditSaving = (data: SavingsEdit) => {
+        editMutation.mutate(data)
+    }
+
+    // MAPPED SAVINGS DATA FROM DB TO THE DYNAMIC DIALOG FIELDS
+    const savingsToFieldSchemas = (saving: Savings): FieldSchema[] => {
+        const modifiedFields = [
+            {
+                name: 'goal_name',
+                label: 'Savings Goal',
+                type: InputType.INPUT,
+                inputType: 'text',
+                placeholder: 'Enter Goal',
+                defaultValue: saving.goal_name,
+            },
+            {
+                name: 'current_amount',
+                label: 'Current Amount',
+                type: InputType.INPUT,
+                inputType: 'number',
+                placeholder: 'Enter current amount',
+                defaultValue: saving.current_amount,
+            },
+            {
+                name: 'target_amount',
+                label: 'Target Amount',
+                type: InputType.INPUT,
+                inputType: 'number',
+                placeholder: 'Enter target amount',
+                defaultValue: saving.target_amount,
+            },
+
+            {
+                name: 'start_date',
+                label: 'Start Date',
+                type: InputType.INPUT,
+                inputType: 'date',
+                placeholder: 'Enter start date ',
+                defaultValue: saving.start_date,
+            },
+
+            {
+                name: 'target_date',
+                label: 'Target Date',
+                type: InputType.INPUT,
+                inputType: 'date',
+                placeholder: 'Enter target date ',
+                defaultValue: saving.target_date,
+            },
+        ]
+
+        return modifiedFields
+    }
     return (
         <div className="container mx-auto py-5">
             <PageTitle title="Savings" />
@@ -127,7 +196,13 @@ export default function SavingsPage() {
 
                                 <CardAction>
                                     <div className="flex gap-1 items-center">
-                                        <Pencil className="size-4" />
+                                        <EditFormDialog
+                                            title="Edit Savings"
+                                            fields={savingsToFieldSchemas(saving)}
+                                            onSubmit={(data) =>
+                                                handleEditSaving({ id: saving.id, ...data })
+                                            }
+                                        />
                                         <Trash className="size-4 text-red-800" />
                                     </div>
                                 </CardAction>

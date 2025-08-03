@@ -3,19 +3,22 @@
 import { Card, CardAction, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip'
 
-import FormDialog from '@/components/form-dialog'
+import FormDialog from '@/components/create-form-dialog'
 import PageTitle from '@/components/page-title'
 import { FieldInputType, InputType } from '@/enums/form'
 import { fetchBudgets } from '@/lib/api/budgets/get'
 import { createBudget } from '@/lib/api/budgets/post'
 import { formatAmount, formatNumericDateToWordDate } from '@/lib/utils'
-import { BudgetCreate } from '@/types/budgets'
+import { BudgetCreate, BudgetEdit, Budgets } from '@/types/budgets'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { toast } from 'sonner'
 import { Pencil, Trash } from 'lucide-react'
 import { Progress } from '@/components/ui/progress'
 import { BudgetFetchComponent } from '@/enums/budgets'
 import TextLoader from '@/components/text-loader'
+import { FieldSchema } from '@/types/form'
+import EditFormDialog from '@/components/edit-form-dialog'
+import { editBudget } from '@/lib/api/budgets/patch'
 
 export default function BudgetsPage() {
     const queryClient = useQueryClient()
@@ -29,7 +32,7 @@ export default function BudgetsPage() {
     })
 
     // CREATE BUDGET MUTATION
-    const mutation = useMutation({
+    const createMutation = useMutation({
         mutationFn: createBudget,
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: ['budgets'] })
@@ -42,7 +45,57 @@ export default function BudgetsPage() {
     })
 
     const handleCreateBudget = (data: BudgetCreate) => {
-        mutation.mutate(data)
+        createMutation.mutate(data)
+    }
+
+    // EDIT BUDGET MUTATION
+    const editMutation = useMutation({
+        mutationFn: editBudget,
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: ['budgets'] })
+            toast.success('Budget Edited Successfully')
+        },
+
+        onError: (error) => {
+            toast.error(error.message)
+        },
+    })
+
+    const handleEditBudget = (data: BudgetEdit) => {
+        editMutation.mutate(data)
+    }
+
+    // MAPPED BUDGETS DATA FROM DB TO THE DYNAMIC DIALOG FIELDS
+    const budgetToFieldSchemas = (budget: Budgets): FieldSchema[] => {
+        const modifiedFields = [
+            {
+                name: 'name',
+                label: 'Budget Name',
+                type: InputType.INPUT,
+                inputType: 'text',
+                placeholder: 'Enter budget name',
+                defaultValue: budget.name,
+            },
+            {
+                name: 'total_amount',
+                label: 'Total Amount',
+                type: InputType.INPUT,
+
+                inputType: 'number',
+                placeholder: 'Enter total budget amount',
+                defaultValue: budget.total_amount,
+            },
+            {
+                name: 'budget_period',
+                label: 'Budget Period',
+                type: InputType.INPUT,
+                inputType: 'date',
+                placeholder: 'Select budget period',
+                defaultValue: budget.budget_period,
+            },
+        ]
+
+        return modifiedFields
     }
 
     return (
@@ -102,7 +155,13 @@ export default function BudgetsPage() {
                                 </div>
                                 <CardAction>
                                     <div className="flex gap-1 items-center">
-                                        <Pencil className="size-4" />
+                                        <EditFormDialog
+                                            title="Edit Budget"
+                                            fields={budgetToFieldSchemas(budget)}
+                                            onSubmit={(data) =>
+                                                handleEditBudget({ id: budget.id, ...data })
+                                            }
+                                        />
                                         <Trash className="size-4 text-red-800" />
                                     </div>
                                 </CardAction>

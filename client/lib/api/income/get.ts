@@ -1,8 +1,8 @@
-import { ExpensesCardData, ExpensesChartData } from '@/types/dashboard'
-import { Expenses } from '@/types/expenses'
+import { IncomeCardData, IncomeChartData } from '@/types/dashboard'
+import { Income } from '@/types/income'
 
-export async function fetchExpenses(): Promise<Expenses[]> {
-    const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/expenses`, {
+export async function fetchIncome(): Promise<Income[]> {
+    const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/income`, {
         method: 'GET',
         headers: {
             Accept: 'application/json',
@@ -18,8 +18,8 @@ export async function fetchExpenses(): Promise<Expenses[]> {
     return await response.json()
 }
 
-export async function fetchExpensesByMonth(month: string): Promise<ExpensesCardData> {
-    const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/expenses/${month}`, {
+export async function fetchIncomeByMonth(month: string): Promise<IncomeCardData> {
+    const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/income/${month}`, {
         method: 'GET',
         headers: {
             Accept: 'application/json',
@@ -35,8 +35,8 @@ export async function fetchExpensesByMonth(month: string): Promise<ExpensesCardD
     return await response.json()
 }
 
-export async function fetchExpensesPerCategory(month: string): Promise<ExpensesChartData[]> {
-    const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/expenses/category/${month}`, {
+export async function fetchIncomePerSource(month: string): Promise<IncomeChartData[]> {
+    const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/income/source/${month}`, {
         method: 'GET',
         headers: {
             Accept: 'application/json',

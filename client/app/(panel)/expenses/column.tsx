@@ -9,7 +9,7 @@ import {
 } from '@/components/ui/dropdown-menu'
 import { MoreHorizontal } from 'lucide-react'
 import { Expenses } from '@/types/expenses'
-import { formatDateLocaleShort } from '@/lib/utils'
+import { formatAmount, formatDateLocaleShort } from '@/lib/utils'
 
 export const columns: ColumnDef<Expenses>[] = [
     {
@@ -20,17 +20,13 @@ export const columns: ColumnDef<Expenses>[] = [
     {
         accessorKey: 'amount',
         header: 'Amount',
-        cell: ({ row }) => <span>₱{parseFloat(row.original.amount.toString()).toFixed(2)}</span>,
+        cell: ({ row }) => <span>₱{formatAmount(row.original.amount)}</span>,
     },
     {
         accessorKey: 'spending_type',
         header: 'Spending Type',
     },
-    {
-        accessorKey: 'date',
-        header: 'Date',
-        cell: ({ row }) => <span>{formatDateLocaleShort(row.original.date)}</span>,
-    },
+
     {
         accessorKey: 'categories.name',
         header: 'Category',
@@ -38,10 +34,11 @@ export const columns: ColumnDef<Expenses>[] = [
     },
 
     {
-        accessorKey: 'created_at',
-        header: 'Date Created',
-        cell: ({ row }) => <span>{formatDateLocaleShort(row.original.created_at)}</span>,
+        accessorKey: 'date',
+        header: 'Date Spent',
+        cell: ({ row }) => <span>{formatDateLocaleShort(row.original.date)}</span>,
     },
+
     {
         id: 'actions',
         header: 'Actions',

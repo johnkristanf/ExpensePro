@@ -116,7 +116,7 @@ export default function ExpensesPage() {
 
                         {
                             name: 'date',
-                            label: 'Date',
+                            label: 'Date Spent',
                             type: InputType.INPUT,
                             inputType: FieldInputType.DATE,
                         },
@@ -125,7 +125,9 @@ export default function ExpensesPage() {
             </div>
 
             {isExpensesLoading || !expenses ? (
-                <TextLoader text="Loading Expenses..." />
+                <div className="flex justify-center">
+                    <TextLoader text="Loading Expenses..." />
+                </div>
             ) : (
                 <DataTable columns={columns} data={expenses} />
             )}

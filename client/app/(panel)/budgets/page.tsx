@@ -15,11 +15,12 @@ import { toast } from 'sonner'
 import { Pencil, Trash } from 'lucide-react'
 import { Progress } from '@/components/ui/progress'
 import { BudgetFetchComponent } from '@/enums/budgets'
+import TextLoader from '@/components/text-loader'
 
 export default function BudgetsPage() {
     const queryClient = useQueryClient()
 
-    // FETCH budgetS
+    // FETCH BUDGETS
     const { data: budgets, isLoading: isBudgetsLoading } = useQuery({
         queryKey: ['budgets'],
         queryFn: async () => {
@@ -80,18 +81,25 @@ export default function BudgetsPage() {
                 />
             </div>
 
+            {isBudgetsLoading && (
+                <div className="flex justify-center mt-10">
+                    <TextLoader text="Loading Budgets..." />
+                </div>
+            )}
+
             {/* BUDGETS CARD */}
-            <div className="h-[70vh] grid md:grid-cols-2 gap-5 mt-5 overflow-y-scroll">
-                {budgets &&
-                    budgets.map((budget) => (
+            {budgets && budgets.length > 0 ? (
+                <div className="h-[70vh] grid md:grid-cols-2 gap-5 mt-5 overflow-y-scroll">
+                    {budgets.map((budget) => (
                         <Card key={budget.id} className="w-full md:max-w-md md:max-h-44">
                             <CardHeader>
                                 <CardTitle>{budget.name}</CardTitle>
-
                                 <div className="flex flex-col gap-1 text-sm mt-1">
-                                    <h1>Budget Period: {formatNumericDateToWordDate(budget.budget_period)}</h1>
+                                    <h1>
+                                        Budget Period:{' '}
+                                        {formatNumericDateToWordDate(budget.budget_period)}
+                                    </h1>
                                 </div>
-
                                 <CardAction>
                                     <div className="flex gap-1 items-center">
                                         <Pencil className="size-4" />
@@ -118,7 +126,6 @@ export default function BudgetsPage() {
                                             <h1>
                                                 Total Budget: ₱{formatAmount(budget.total_amount)}
                                             </h1>
-
                                             <h1>
                                                 Amount Left: ₱{formatAmount(budget.current_amount)}
                                             </h1>
@@ -128,7 +135,12 @@ export default function BudgetsPage() {
                             </CardContent>
                         </Card>
                     ))}
-            </div>
+                </div>
+            ) : budgets && budgets.length === 0 ? (
+                <div className="text-center mt-10 text-muted-foreground text-md">
+                    No budgets found.
+                </div>
+            ) : null}
         </div>
     )
 }

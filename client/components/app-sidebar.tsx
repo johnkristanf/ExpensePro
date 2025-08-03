@@ -62,9 +62,9 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
             <SidebarHeader>
                 <div className="flex items-center gap-2 font-semibold">
                     <Image
-                        src={'/vercel.svg'}
+                        src={'/ExpensProLogo.png'}
                         alt="ExpensePro Logo"
-                        className="bg-primary"
+                        className="bg-primary rounded-md"
                         width={40}
                         height={40}
                     />

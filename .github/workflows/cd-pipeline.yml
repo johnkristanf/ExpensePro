@@ -72,6 +72,15 @@ jobs:
           script: |
             mkdir -p ${{ env.SERVER_DIR }}
 
+      - name: Upload Compose & Nginx Config File to EC2 Server Directory
+        uses: appleboy/scp-action@v0.1.5
+        with:
+          host: ${{ env.EC2_HOST }}
+          username: ${{ env.EC2_USER }}
+          key: ${{ env.EC2_KEY }}
+          source: "./server/docker-compose.yml,./server/default.conf,.env"
+          target: ${{ env.SERVER_DIR }}
+
 
       - name: Install Docker and Docker Compose inside EC2 
         uses: appleboy/ssh-action@v1.0.3
@@ -92,10 +101,12 @@ jobs:
               
               sudo install -m 0755 -d /etc/apt/keyrings
               
+              # Docker Key for Repository Signing
               curl -fsSL https://download.docker.com/linux/ubuntu/gpg | \
                 sudo gpg --dearmor -o /etc/apt/keyrings/docker.gpg
               sudo chmod a+r /etc/apt/keyrings/docker.gpg
               
+              # Docker Official Repository
               echo \
                 "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/docker.gpg] \
                 https://download.docker.com/linux/ubuntu \
@@ -144,18 +155,6 @@ jobs:
 
             # Test renewal (dry-run)
             sudo certbot renew --dry-run
-
-
-
-      - name: Upload Compose & Nginx Config File to EC2 Server Directory
-        uses: appleboy/scp-action@v0.1.5
-        with:
-          host: ${{ env.EC2_HOST }}
-          username: ${{ env.EC2_USER }}
-          key: ${{ env.EC2_KEY }}
-          source: "docker-compose.yml,default.conf,.env"
-          target: ${{ env.SERVER_DIR }}
-
           
       - name: 🚀 Deploy on EC2 via SSH
         uses: appleboy/ssh-action@v1.0.3

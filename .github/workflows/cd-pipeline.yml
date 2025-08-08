@@ -25,17 +25,15 @@ jobs:
 
       - name: Build Docker Image
         run: |
-          docker build -t johnkristan/expensepro:latest .
-
+          docker build -t johnkristan/expensepro:latest ./server \
+            -f ./server/Dockerfile
 
       - name: 🔐 Login to Docker Hub
         run: echo "${{ secrets.DOCKER_HUB_ACCESS_TOKEN }}" | docker login -u "${{ secrets.DOCKER_HUB_USERNAME }}" --password-stdin
 
-
       - name: Push Docker Image to Docker Hub
         run: |
           docker push johnkristan/expensepro:latest 
-
 
       - name: Create .env File for Docker Compose Environment
         run: |

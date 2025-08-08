@@ -21,6 +21,8 @@ export async function fetchExpenses(): Promise<Expenses[]> {
 export async function fetchExpensesByMonth(month: string): Promise<ExpensesCardData> {
     const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/expenses/${month}`, {
         method: 'GET',
+        credentials: 'include', 
+
         headers: {
             Accept: 'application/json',
             'Content-Type': 'application/json',
@@ -38,6 +40,8 @@ export async function fetchExpensesByMonth(month: string): Promise<ExpensesCardD
 export async function fetchExpensesPerCategory(month: string): Promise<ExpensesChartData[]> {
     const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/expenses/category/${month}`, {
         method: 'GET',
+        credentials: 'include', 
+
         headers: {
             Accept: 'application/json',
             'Content-Type': 'application/json',

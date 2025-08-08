@@ -8,7 +8,9 @@ use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Validation\ValidationException;
+use Sentry\Laravel\Integration;
 use Symfony\Component\HttpKernel\Exception\MethodNotAllowedHttpException;
 use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
 use Symfony\Component\HttpKernel\Exception\TooManyRequestsHttpException;
@@ -21,13 +23,12 @@ return Application::configure(basePath: dirname(__DIR__))
         health: '/up',
     )
     ->withMiddleware(function (Middleware $middleware): void {
-        //
+        $middleware->statefulApi();
     })
     ->withExceptions(function (Exceptions $exceptions): void {
-        $exceptions->render(function (Exception $e, Request $request) {
-            if (!$request->expectsJson() && !$request->is('api/*')) {
-                return null; // Let Laravel handle non-API requests normally
-            }
+        Integration::handles($exceptions);
+        
+        $exceptions->render(function (Exception $e) {
 
             return match (true) {
                 // Validation errors (422)
@@ -95,6 +96,7 @@ return Application::configure(basePath: dirname(__DIR__))
                     'error' => config('app.debug') ? $e->getMessage() : 'A database error occurred',
                     'error_code' => 'DATABASE_ERROR'
                 ], 500),
+
 
                 // Generic server errors (500)
                 default => response()->json([

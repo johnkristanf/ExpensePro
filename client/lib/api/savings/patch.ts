@@ -5,6 +5,8 @@ export async function editSavings(data: SavingsEdit) {
 
     const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/savings/${id}`, {
         method: 'PATCH',
+        credentials: 'include', 
+
         headers: {
             'Content-Type': 'application/json',
         },

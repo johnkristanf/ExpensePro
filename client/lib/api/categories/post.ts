@@ -3,6 +3,8 @@ import { CategoriesCreate } from '@/types/categories'
 export async function createCategory(data: CategoriesCreate) {
     const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/categories`, {
         method: 'POST',
+        credentials: 'include', 
+
         headers: {
             'Content-Type': 'application/json',
         },
@@ -14,5 +16,5 @@ export async function createCategory(data: CategoriesCreate) {
         throw new Error(resp.error)
     }
 
-    return response.json()
+    return await response.json()
 }

@@ -3,6 +3,8 @@ import { IncomeCreate } from '@/types/income'
 export async function createIncome(data: IncomeCreate) {
     const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/income`, {
         method: 'POST',
+        credentials: 'include', 
+
         headers: {
             'Content-Type': 'application/json',
         },

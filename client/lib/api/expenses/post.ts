@@ -3,6 +3,8 @@ import { ExpenseCreate } from '@/types/expenses'
 export async function createExpenses(data: ExpenseCreate) {
     const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/expenses`, {
         method: 'POST',
+        credentials: 'include', 
+
         headers: {
             'Content-Type': 'application/json',
         },

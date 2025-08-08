@@ -4,6 +4,8 @@ import { Income } from '@/types/income'
 export async function fetchIncome(): Promise<Income[]> {
     const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/income`, {
         method: 'GET',
+        credentials: 'include', 
+
         headers: {
             Accept: 'application/json',
             'Content-Type': 'application/json',
@@ -21,6 +23,8 @@ export async function fetchIncome(): Promise<Income[]> {
 export async function fetchIncomeByMonth(month: string): Promise<IncomeCardData> {
     const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/income/${month}`, {
         method: 'GET',
+        credentials: 'include', 
+
         headers: {
             Accept: 'application/json',
             'Content-Type': 'application/json',
@@ -38,6 +42,8 @@ export async function fetchIncomeByMonth(month: string): Promise<IncomeCardData>
 export async function fetchIncomePerSource(month: string): Promise<IncomeChartData[]> {
     const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/income/source/${month}`, {
         method: 'GET',
+        credentials: 'include', 
+
         headers: {
             Accept: 'application/json',
             'Content-Type': 'application/json',

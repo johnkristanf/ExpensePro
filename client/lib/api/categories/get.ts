@@ -3,6 +3,8 @@ import { Categories } from '@/types/categories'
 export async function fetchCategories(): Promise<Categories[]> {
     const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/categories`, {
         method: 'GET',
+        credentials: 'include', 
+
         headers: {
             Accept: 'application/json',
             'Content-Type': 'application/json',

@@ -5,6 +5,8 @@ export async function editBudget(data: BudgetEdit) {
 
     const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/budgets/${id}`, {
         method: 'PATCH',
+        credentials: 'include', 
+
         headers: {
             'Content-Type': 'application/json',
         },

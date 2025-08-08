@@ -1,0 +1,191 @@
+name: Laravel CI/CD with Docker and NGINX
+
+on:
+  push:
+    branches: [main]
+
+env:
+  SERVER_DIR: /home/${{ secrets.EC2_USER }}/server
+  DOCKER_HUB_USERNAME: ${{ secrets.DOCKER_HUB_USERNAME }}
+  DOCKER_HUB_ACCESS_TOKEN: ${{ secrets.DOCKER_HUB_ACCESS_TOKEN }}
+  EC2_HOST: ${{ secrets.EC2_HOST }}
+  EC2_USER: ${{ secrets.EC2_USER }}
+  EC2_KEY: ${{ secrets.EC2_KEY }}
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v3
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Build Docker Image
+        run: |
+          docker build -t johnkristan/expensepro:latest .
+
+
+      - name: 🔐 Login to Docker Hub
+        run: echo "${{ secrets.DOCKER_HUB_ACCESS_TOKEN }}" | docker login -u "${{ secrets.DOCKER_HUB_USERNAME }}" --password-stdin
+
+
+      - name: Push Docker Image to Docker Hub
+        run: |
+          docker push johnkristan/expensepro:latest 
+
+
+      - name: Create .env File for Docker Compose Environment
+        run: |
+            cat <<'EOF' > .env
+            APP_NAME=${{ secrets.APP_NAME }}
+            APP_ENV=production
+            APP_KEY=${{ secrets.APP_KEY }}
+            APP_DEBUG=false
+            APP_URL=${{ secrets.APP_URL }}
+
+            DB_CONNECTION=${{ secrets.DB_CONNECTION }}
+            DB_DATABASE=${{ secrets.DB_DATABASE }}
+            DB_HOST=${{ secrets.DB_HOST }}
+            DB_PASSWORD=${{ secrets.DB_PASSWORD }}
+            DB_PORT=${{ secrets.DB_PORT }}
+            DB_USERNAME=${{ secrets.DB_USERNAME }}
+          
+            LOG_CHANNEL=stack
+            LOG_LEVEL=error
+
+            SANCTUM_STATEFUL_DOMAINS=${{ secrets.SANCTUM_STATEFUL_DOMAINS }}
+            SESSION_DOMAIN=${{ secrets.SESSION_DOMAIN }}
+
+            USER_FULL_NAME=${{ secrets.USER_FULL_NAME }}
+            USER_EMAIL=${{ secrets.USER_EMAIL }}
+            USER_PASSWORD=${{ secrets.USER_PASSWORD }}
+
+            EOF
+
+      - name: Make Server Directory on EC2
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ env.EC2_HOST }}
+          username: ${{ env.EC2_USER }}
+          key: ${{ env.EC2_KEY }}
+          script: |
+            mkdir -p ${{ env.SERVER_DIR }}
+
+
+      - name: Install Docker and Docker Compose inside EC2 
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ env.EC2_HOST }}
+          username: ${{ env.EC2_USER }}
+          key: ${{ env.EC2_KEY }}
+          script: |
+            set -e
+
+            if ! command -v docker &> /dev/null; then
+              
+              sudo apt-get remove -y docker docker-engine docker.io containerd runc || true
+              
+              sudo apt-get update
+             
+              sudo apt-get install -y ca-certificates curl gnupg
+              
+              sudo install -m 0755 -d /etc/apt/keyrings
+              
+              curl -fsSL https://download.docker.com/linux/ubuntu/gpg | \
+                sudo gpg --dearmor -o /etc/apt/keyrings/docker.gpg
+              sudo chmod a+r /etc/apt/keyrings/docker.gpg
+              
+              echo \
+                "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/docker.gpg] \
+                https://download.docker.com/linux/ubuntu \
+                $(. /etc/os-release && echo "$VERSION_CODENAME") stable" | \
+                sudo tee /etc/apt/sources.list.d/docker.list > /dev/null
+
+              sudo apt-get update
+             
+              sudo apt-get install -y docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin
+              
+              sudo usermod -aG docker $USER
+            fi
+
+            # Install Docker Compose plugin if not installed
+            if ! docker compose version &> /dev/null; then
+              sudo apt-get install -y docker-compose-plugin
+            fi
+
+
+      - name: 🚀 Deploy & Setup SSL Key and Certificate
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ env.EC2_HOST }}
+          username: ${{ env.EC2_USER }}
+          key: ${{ env.EC2_KEY }}
+          script: |
+            set -e
+
+            # Install Certbot + Nginx plugin if missing
+            if ! command -v certbot &> /dev/null; then
+              sudo apt-get update
+              sudo apt-get install -y certbot python3-certbot-nginx
+            fi
+
+            # One-time SSL issuance (only if certs don't exist yet)
+            if [ ! -d "/etc/letsencrypt/live/${{ secrets.SSL_DOMAIN }}" ]; then
+              echo "⚡ Requesting SSL certificate for ${{ secrets.SSL_DOMAIN }}..."
+              sudo certbot --nginx -d ${{ secrets.SSL_DOMAIN }} -d www.${{ secrets.SSL_DOMAIN }} --non-interactive --agree-tos -m ${{ secrets.SSL_EMAIL }}
+            else
+              echo "✅ SSL certificate already exists, skipping issuance."
+            fi
+
+            # Enable auto-renew via systemd
+            sudo systemctl enable certbot.timer
+            sudo systemctl start certbot.timer
+
+            # Test renewal (dry-run)
+            sudo certbot renew --dry-run
+
+
+
+      - name: Upload Compose & Nginx Config File to EC2 Server Directory
+        uses: appleboy/scp-action@v0.1.5
+        with:
+          host: ${{ env.EC2_HOST }}
+          username: ${{ env.EC2_USER }}
+          key: ${{ env.EC2_KEY }}
+          source: "docker-compose.yml,default.conf,.env"
+          target: ${{ env.SERVER_DIR }}
+
+          
+      - name: 🚀 Deploy on EC2 via SSH
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ env.EC2_HOST }}
+          username: ${{ env.EC2_USER }}
+          key: ${{ env.EC2_KEY }}
+          script: |
+            set -e
+            cd ${{ env.SERVER_DIR }}
+
+            echo "📄 Checking Files inside EC2"
+            ls -lah
+
+            echo "📄 Viewing .env"
+            cat .env
+
+            echo "Stopping old containers (if any)..."
+            docker compose down || true
+
+            echo "Pulling latest images..."
+            docker compose pull
+
+            echo "Starting containers..."
+            docker compose up -d --remove-orphans
+
+            echo "Checking container status..."
+            docker compose ps
+
+            echo "Recent logs:"
+            docker compose logs --tail=50

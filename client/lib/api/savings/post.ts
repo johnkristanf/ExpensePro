@@ -3,6 +3,8 @@ import { SavingsCreate } from "@/types/savings"
 export async function createSavings(data: SavingsCreate) {
     const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/savings`, {
         method: 'POST',
+        credentials: 'include', 
+
         headers: {
             'Content-Type': 'application/json',
         },

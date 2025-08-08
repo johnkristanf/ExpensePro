@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Helpers\MonthUtils;
 use App\Models\Budgets;
 use App\Models\Expenses;
 use Illuminate\Http\Request;
@@ -33,7 +34,6 @@ class ExpensesController extends Controller
 
         // Step 1: Fetch the Budget
         $budget = Budgets::find($validated['budget_id']);
-
         if (!$budget) {
             return response()->json(['error' => 'Budget not found.'], 404);
         }
@@ -41,7 +41,7 @@ class ExpensesController extends Controller
         // Step 2: Deduct the expense from the budget's current_amount
         $budget->current_amount -= $validated['amount'];
 
-        if ($budget->current_amount < 0) {
+        if ($budget->current_amount <= 0) {
             return response()->json(['error' => 'Insufficient budget.'], 422);
         }
 
@@ -60,5 +60,69 @@ class ExpensesController extends Controller
             'message' => 'Expense created successfully',
             'data' => $expense,
         ], 201);
+    }
+
+
+    public function getMonthlyExpenses(string $month)
+    {
+
+        $monthMap = MonthUtils::LoadMonthMap();
+
+        if (empty($month)) {
+            return response()->json([
+                'error' => 'Invalid month name provided.',
+            ], 400);
+        }
+
+        if ($month === 'all') {
+            $total = Expenses::sum('amount');
+        }
+
+        if (array_key_exists($month, $monthMap)) {
+            // Optional: Default to current year if not passed separately
+            $year = now()->year;
+
+            $total = Expenses::whereMonth('date', $monthMap[$month])
+                ->whereYear('date', $year)
+                ->sum('amount');
+        }
+
+        return response()->json([
+            'total' => $total,
+        ]);
+    }
+
+
+    public function getExpensesPerCategory(string $month)
+    {
+
+        $monthMap = MonthUtils::LoadMonthMap();
+        $query = Expenses::with('categories:id,name');
+
+        if (empty($month)) {
+            return response()->json([
+                'error' => 'Invalid month name provided.',
+            ], 400);
+        }
+
+        if ($month !== 'all') {
+            $monthNumber = $monthMap[$month];
+            $year = now()->year;
+
+            $query->whereMonth('date', $monthNumber)
+                ->whereYear('date', $year);
+        }
+
+        $results = $query->selectRaw('category_id, SUM(amount) as total')
+            ->groupBy('category_id')
+            ->get()
+            ->map(function ($item) {
+                return [
+                    'category' => $item->categories->name ?? 'Unknown',
+                    'amount' => $item->total,
+                ];
+            });
+
+        return response()->json($results);
     }
 }

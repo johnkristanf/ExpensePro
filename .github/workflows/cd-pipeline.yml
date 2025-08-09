@@ -73,13 +73,14 @@ jobs:
             mkdir -p ${{ env.SERVER_DIR }}
 
       - name: Upload Compose & Nginx Config File to EC2 Server Directory
-        uses: appleboy/scp-action@v0.1.5
+        uses: appleboy/scp-action@v0.1.7
         with:
           host: ${{ env.EC2_HOST }}
           username: ${{ env.EC2_USER }}
           key: ${{ env.EC2_KEY }}
           source: "docker-compose.yml,default.conf,.env"
           target: ${{ env.SERVER_DIR }}
+          strip_components: 1
 
 
       - name: Install Docker and Docker Compose inside EC2 

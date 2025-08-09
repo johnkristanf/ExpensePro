@@ -3,6 +3,8 @@ services:
         image: johnkristan/expensepro:latest
         container_name: expensepro_server
         restart: always
+        ports:
+            - "9000:9000"
         env_file:
             - .env
         networks:

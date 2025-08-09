@@ -9,9 +9,6 @@ chown -R www-data:www-data storage bootstrap/cache
 chmod -R 775 storage bootstrap/cache
 
 
-# Install dependencies (optional if already in Docker build)
-# composer install --no-interaction --prefer-dist --optimize-autoloader
-
 # Run artisan commands
 php artisan config:clear
 php artisan cache:clear

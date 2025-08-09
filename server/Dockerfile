@@ -3,7 +3,8 @@ FROM php:8.2-fpm
 # Install system dependencies
 RUN apt-get update && apt-get install -y \
     curl unzip zip libpng-dev libonig-dev nano libxml2-dev libzip-dev \
-    && docker-php-ext-install pdo pdo_mysql mbstring zip exif pcntl
+    libpq-dev \
+    && docker-php-ext-install pdo pdo_mysql pdo_pgsql mbstring zip exif pcntl
 
 # Install Composer
 COPY --from=composer:latest /usr/bin/composer /usr/bin/composer

@@ -18,7 +18,7 @@ return [
     'paths' => ['api/*', 'sanctum/csrf-cookie', 'login', 'logout', 'register'],
     'allowed_methods' => ['*'],
 
-    'allowed_origins' => ['http://localhost:5000'],
+    'allowed_origins' => ['http://localhost:5000', 'https://expenseproapp.notenexus.it.com'],
 
     'allowed_origins_patterns' => [],
 

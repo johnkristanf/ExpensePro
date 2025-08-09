@@ -78,7 +78,7 @@ jobs:
           host: ${{ env.EC2_HOST }}
           username: ${{ env.EC2_USER }}
           key: ${{ env.EC2_KEY }}
-          source: "server/docker-compose.yml,server/default.conf,.env"
+          source: "docker-compose.yml,default.conf,.env"
           target: ${{ env.SERVER_DIR }}
 
 

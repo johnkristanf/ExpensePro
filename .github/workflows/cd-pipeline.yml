@@ -78,7 +78,7 @@ jobs:
           host: ${{ env.EC2_HOST }}
           username: ${{ env.EC2_USER }}
           key: ${{ env.EC2_KEY }}
-          source: "docker-compose.yml"
+          source: "server/docker-compose.yml"
           target: ${{ env.SERVER_DIR }}/
           overwrite: true
 
@@ -88,7 +88,7 @@ jobs:
           host: ${{ env.EC2_HOST }}
           username: ${{ env.EC2_USER }}
           key: ${{ env.EC2_KEY }}
-          source: "default.conf"
+          source: "server/default.conf"
           target: ${{ env.SERVER_DIR }}/
           overwrite: true
 

@@ -72,25 +72,27 @@ jobs:
           script: |
             mkdir -p ${{ env.SERVER_DIR }}
 
-      - name: Upload Docker Compose File
-        uses: appleboy/scp-action@v0.1.7
-        with:
-          host: ${{ env.EC2_HOST }}
-          username: ${{ env.EC2_USER }}
-          key: ${{ env.EC2_KEY }}
-          source: "server/docker-compose.yml"
-          target: ${{ env.SERVER_DIR }}/
-          overwrite: true
-
-      - name: Upload Nginx Config File
-        uses: appleboy/scp-action@v0.1.7
-        with:
-          host: ${{ env.EC2_HOST }}
-          username: ${{ env.EC2_USER }}
-          key: ${{ env.EC2_KEY }}
-          source: "server/default.conf"
-          target: ${{ env.SERVER_DIR }}/
-          overwrite: true
+      - name: Upload files using native SCP
+        run: |
+          # Create temporary SSH key file
+          echo "${{ env.EC2_KEY }}" > temp_ssh_key
+          chmod 600 temp_ssh_key
+          
+          # Upload files directly to target directory
+          scp -i temp_ssh_key -o StrictHostKeyChecking=no \
+              server/docker-compose.yml \
+              ${{ env.EC2_USER }}@${{ env.EC2_HOST }}:${{ env.SERVER_DIR }}/docker-compose.yml
+          
+          scp -i temp_ssh_key -o StrictHostKeyChecking=no \
+              server/default.conf \
+              ${{ env.EC2_USER }}@${{ env.EC2_HOST }}:${{ env.SERVER_DIR }}/default.conf
+          
+          scp -i temp_ssh_key -o StrictHostKeyChecking=no \
+              .env \
+              ${{ env.EC2_USER }}@${{ env.EC2_HOST }}:${{ env.SERVER_DIR }}/.env
+          
+          # Clean up
+          rm temp_ssh_key
 
       - name: Upload Environment File
         uses: appleboy/scp-action@v0.1.7

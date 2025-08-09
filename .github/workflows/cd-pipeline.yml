@@ -185,6 +185,17 @@ jobs:
           key: ${{ env.EC2_KEY }}
           script: |
             set -e
+
+            # Stop any services using port 80/443
+            sudo systemctl stop apache2 || true
+            sudo systemctl stop nginx || true
+            sudo systemctl disable apache2 || true
+            sudo systemctl disable nginx || true
+            
+            # Kill any processes still using these ports
+            sudo fuser -k 80/tcp || true
+            sudo fuser -k 443/tcp || true
+
             cd ${{ env.SERVER_DIR }}
 
             echo "📄 Checking Files inside EC2"

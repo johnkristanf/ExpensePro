@@ -193,7 +193,10 @@ jobs:
             echo "📄 Viewing .env"
             cat .env
 
-            echo "Stopping old containers (if any)..."
+            echo "🔐 Logging into Docker Hub..."
+            echo "${{ env.DOCKER_HUB_ACCESS_TOKEN }}" | docker login -u "${{ env.DOCKER_HUB_USERNAME }}" --password-stdin
+
+            echo "Stopping old containers..."
             docker compose down || true
 
             echo "Pulling latest images..."

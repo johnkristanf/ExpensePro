@@ -1,6 +1,7 @@
 services:
     app:
         image: johnkristan/expensepro:latest
+        container_name: expensepro_server
         restart: always
         ports:
             - "8000:9000"

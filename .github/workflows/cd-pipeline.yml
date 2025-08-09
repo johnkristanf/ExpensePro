@@ -33,35 +33,35 @@ jobs:
 
       - name: Push Docker Image to Docker Hub
         run: |
-          docker push johnkristan/expensepro:latest 
+          docker push johnkristan/expensepro:latest
 
       - name: Create .env File for Docker Compose Environment
         run: |
-            cat <<'EOF' > .env
-            APP_NAME=${{ secrets.APP_NAME }}
-            APP_ENV=production
-            APP_KEY=${{ secrets.APP_KEY }}
-            APP_DEBUG=false
-            APP_URL=${{ secrets.APP_URL }}
+          cat <<'EOF' > .env
+          APP_NAME=${{ secrets.APP_NAME }}
+          APP_ENV=production
+          APP_KEY=${{ secrets.APP_KEY }}
+          APP_DEBUG=false
+          APP_URL=${{ secrets.APP_URL }}
 
-            DB_CONNECTION=${{ secrets.DB_CONNECTION }}
-            DB_DATABASE=${{ secrets.DB_DATABASE }}
-            DB_HOST=${{ secrets.DB_HOST }}
-            DB_PASSWORD=${{ secrets.DB_PASSWORD }}
-            DB_PORT=${{ secrets.DB_PORT }}
-            DB_USERNAME=${{ secrets.DB_USERNAME }}
-          
-            LOG_CHANNEL=stack
-            LOG_LEVEL=error
+          DB_CONNECTION=${{ secrets.DB_CONNECTION }}
+          DB_DATABASE=${{ secrets.DB_DATABASE }}
+          DB_HOST=${{ secrets.DB_HOST }}
+          DB_PASSWORD=${{ secrets.DB_PASSWORD }}
+          DB_PORT=${{ secrets.DB_PORT }}
+          DB_USERNAME=${{ secrets.DB_USERNAME }}
 
-            SANCTUM_STATEFUL_DOMAINS=${{ secrets.SANCTUM_STATEFUL_DOMAINS }}
-            SESSION_DOMAIN=${{ secrets.SESSION_DOMAIN }}
+          LOG_CHANNEL=stack
+          LOG_LEVEL=error
 
-            USER_FULL_NAME=${{ secrets.USER_FULL_NAME }}
-            USER_EMAIL=${{ secrets.USER_EMAIL }}
-            USER_PASSWORD=${{ secrets.USER_PASSWORD }}
+          SANCTUM_STATEFUL_DOMAINS=${{ secrets.SANCTUM_STATEFUL_DOMAINS }}
+          SESSION_DOMAIN=${{ secrets.SESSION_DOMAIN }}
 
-            EOF
+          USER_FULL_NAME=${{ secrets.USER_FULL_NAME }}
+          USER_EMAIL=${{ secrets.USER_EMAIL }}
+          USER_PASSWORD=${{ secrets.USER_PASSWORD }}
+
+          EOF
 
       - name: Make Server Directory on EC2
         uses: appleboy/ssh-action@v1.0.3
@@ -72,18 +72,37 @@ jobs:
           script: |
             mkdir -p ${{ env.SERVER_DIR }}
 
-      - name: Upload Compose & Nginx Config File to EC2 Server Directory
+      - name: Upload Docker Compose File
         uses: appleboy/scp-action@v0.1.7
         with:
           host: ${{ env.EC2_HOST }}
           username: ${{ env.EC2_USER }}
           key: ${{ env.EC2_KEY }}
-          source: "docker-compose.yml,default.conf,.env"
-          target: ${{ env.SERVER_DIR }}
-          strip_components: 1
+          source: "docker-compose.yml"
+          target: ${{ env.SERVER_DIR }}/
+          overwrite: true
 
+      - name: Upload Nginx Config File
+        uses: appleboy/scp-action@v0.1.7
+        with:
+          host: ${{ env.EC2_HOST }}
+          username: ${{ env.EC2_USER }}
+          key: ${{ env.EC2_KEY }}
+          source: "default.conf"
+          target: ${{ env.SERVER_DIR }}/
+          overwrite: true
 
-      - name: Install Docker and Docker Compose inside EC2 
+      - name: Upload Environment File
+        uses: appleboy/scp-action@v0.1.7
+        with:
+          host: ${{ env.EC2_HOST }}
+          username: ${{ env.EC2_USER }}
+          key: ${{ env.EC2_KEY }}
+          source: ".env"
+          target: ${{ env.SERVER_DIR }}/
+          overwrite: true
+
+      - name: Install Docker and Docker Compose inside EC2
         uses: appleboy/ssh-action@v1.0.3
         with:
           host: ${{ env.EC2_HOST }}
@@ -126,7 +145,6 @@ jobs:
               sudo apt-get install -y docker-compose-plugin
             fi
 
-
       - name: 🚀 Deploy & Setup SSL Key and Certificate
         uses: appleboy/ssh-action@v1.0.3
         with:
@@ -156,7 +174,7 @@ jobs:
 
             # Test renewal (dry-run)
             sudo certbot renew --dry-run
-          
+
       - name: 🚀 Deploy on EC2 via SSH
         uses: appleboy/ssh-action@v1.0.3
         with:

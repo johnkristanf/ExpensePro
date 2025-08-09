@@ -20,5 +20,4 @@ RUN chmod +x /var/www/entrypoint.sh
 # Expose ports
 EXPOSE 9000
 
-ENTRYPOINT ["/usr/local/bin/entrypoint.sh"]
-
+ENTRYPOINT ["/var/www/entrypoint.sh"]

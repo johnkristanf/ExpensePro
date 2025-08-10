@@ -1,22 +1,8 @@
 import { BudgetEdit } from '@/types/budgets'
+import api from '../axios'
 
 export async function editBudget(data: BudgetEdit) {
     const { id, ...spreadData } = data
-
-    const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/budgets/${id}`, {
-        method: 'PATCH',
-        credentials: 'include', 
-
-        headers: {
-            'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(spreadData),
-    })
-
-    if (!response.ok) {
-        const resp = await response.json()
-        throw new Error(resp.error)
-    }
-
-    return response.json()
+    const response = await api.patch(`/budgets/${id}`, spreadData)
+    return response.data;
 }

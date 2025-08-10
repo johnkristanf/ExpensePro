@@ -77,7 +77,7 @@ jobs:
           script: |
             mkdir -p ${{ env.SERVER_DIR }}
 
-            
+
       - name: Upload files using native SCP
         run: |
           # Create temporary SSH key file
@@ -99,16 +99,6 @@ jobs:
 
           # Clean up
           rm temp_ssh_key
-
-      - name: Upload Environment File
-        uses: appleboy/scp-action@v0.1.7
-        with:
-          host: ${{ env.EC2_HOST }}
-          username: ${{ env.EC2_USER }}
-          key: ${{ env.EC2_KEY }}
-          source: ".env"
-          target: ${{ env.SERVER_DIR }}/
-          overwrite: true
 
       - name: Install Docker and Docker Compose inside EC2
         uses: appleboy/ssh-action@v1.0.3

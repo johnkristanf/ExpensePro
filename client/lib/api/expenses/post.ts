@@ -1,20 +1,7 @@
 import { ExpenseCreate } from '@/types/expenses'
+import api from '../axios'
 
 export async function createExpenses(data: ExpenseCreate) {
-    const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/expenses`, {
-        method: 'POST',
-        credentials: 'include', 
-
-        headers: {
-            'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(data),
-    })
-
-    if (!response.ok) {
-        const resp = await response.json()
-        throw new Error(resp.error)
-    }
-
-    return response.json()
+    const response = await api.post(`/expenses`)
+    return response.data;
 }

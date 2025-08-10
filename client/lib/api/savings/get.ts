@@ -1,20 +1,7 @@
 import { Savings } from '@/types/savings'
+import api from '../axios'
 
 export async function fetchSavings(): Promise<Savings[]> {
-    const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/savings`, {
-        method: 'GET',
-        credentials: 'include', 
-
-        headers: {
-            Accept: 'application/json',
-            'Content-Type': 'application/json',
-        },
-    })
-
-    if (!response.ok) {
-        const resp = await response.json()
-        throw new Error(resp.error)
-    }
-
-    return await response.json()
+    const response = await api.get(`/savings`)
+    return await response.data;
 }

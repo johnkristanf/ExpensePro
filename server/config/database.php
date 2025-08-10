@@ -96,7 +96,8 @@ return [
             'search_path' => 'public',
             'sslmode' => 'prefer',
             'options' => [
-                \PDO::ATTR_PERSISTENT => false, // 🚫 persistent connections
+                \PDO::ATTR_EMULATE_PREPARES => true,  // Use client-side prepares
+                \PDO::ATTR_PERSISTENT => false,       // No persistent connections
             ],
         ],
 

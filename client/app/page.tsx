@@ -10,7 +10,7 @@ import { useRouter } from 'next/navigation'
 import { useState } from 'react'
 
 export default function LandingPage() {
-    const [isLoading, setIsLoading] = useState<boolean>(false);
+    const [isLoading, setIsLoading] = useState<boolean>(false)
     const router = useRouter()
 
     const {
@@ -23,10 +23,10 @@ export default function LandingPage() {
     const loginMutation = useMutation({
         mutationFn: login,
         onSuccess: (data) => {
+            console.log('Login Success: ', data)
             if (data.success) {
-                console.log("Login Success: ", data);
-                reset();
-                router.replace('/dashboard');
+                reset()
+                router.replace('/dashboard')
             }
         },
         onError: (error) => {
@@ -35,9 +35,10 @@ export default function LandingPage() {
     })
 
     const onSubmit = async (data: LoginCredentials) => {
-        setIsLoading(true);
-        await getCrsfCookie();
-        loginMutation.mutate(data);
+        setIsLoading(true)
+        await getCrsfCookie()
+        console.log('LOGIN AFTER GETTING COOKIE')
+        loginMutation.mutate(data)
         setIsLoading(false)
     }
     return (

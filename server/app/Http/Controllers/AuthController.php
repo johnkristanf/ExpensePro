@@ -28,4 +28,17 @@ class AuthController extends Controller
             'message' => 'Login successfully.',
         ], 201);
     }
+
+    public function logout(Request $request)
+    {
+        Auth::guard('web')->logout(); // Logout the user
+
+        $request->session()->invalidate(); // Invalidate the session
+        $request->session()->regenerateToken(); // Prevent CSRF reuse
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Logged out successfully'
+        ]);
+    }
 }

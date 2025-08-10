@@ -12,7 +12,7 @@ class ExpensesController extends Controller
 {
     public function index()
     {
-        $expenses = Expenses::with('categories')->get();
+        $expenses = Expenses::with('categories')->latest()->get();
         return response()->json($expenses);
     }
 
@@ -26,11 +26,6 @@ class ExpensesController extends Controller
             'spending_type' => 'required',
             'date' => 'required|date',
         ]);
-
-        Log::info("EXPENSES DATA: ", [
-            'validated' => $validated
-        ]);
-
 
         // Step 1: Fetch the Budget
         $budget = Budgets::find($validated['budget_id']);

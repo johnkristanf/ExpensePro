@@ -31,8 +31,6 @@ export default function DashboardCard({
 }: DashboardCardProps) {
     const monthsCardFilter = generateMonthlyObjects(2025)
 
-    console.log('selectedMonth: ', selectedMonth)
-
     return (
         <Card className="max-h-48">
             <CardHeader>

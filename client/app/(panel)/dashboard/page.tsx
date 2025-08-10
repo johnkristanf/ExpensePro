@@ -46,9 +46,6 @@ export default function DashboardPage() {
         },
     })
 
-    console.log("incomeSource: ", incomeSource);
-    console.log("expensesCategory: ", expensesCategory);
-    
 
     return (
         <div className="container mx-auto py-5">

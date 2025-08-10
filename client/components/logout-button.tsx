@@ -11,7 +11,6 @@ export default function LogoutButton() {
     const mutation = useMutation({
         mutationFn: logout,
         onSuccess: (data) => {
-            console.log('data: ', data)
             router.replace('/')
         },
 
@@ -21,7 +20,6 @@ export default function LogoutButton() {
     })
 
     const handleLogout = () => {
-        console.log('LOGOUT')
         mutation.mutate()
     }
 

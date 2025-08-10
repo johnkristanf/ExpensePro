@@ -19,11 +19,11 @@ class ExpensesController extends Controller
     public function store(Request $request)
     {
         $validated = $request->validate([
-            'category_id' => 'required|exists:categories,id',
-            'budget_id' => 'required|exists:budgets,id',
+            'category_id' => 'required',
+            'budget_id' => 'required',
             'description' => 'required|string',
             'amount' => 'required|numeric|min:0',
-            'spending_type' => 'required|in:WANTS,NEEDS',
+            'spending_type' => 'required',
             'date' => 'required|date',
         ]);
 

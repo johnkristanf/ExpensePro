@@ -10,7 +10,10 @@ use Illuminate\Foundation\Configuration\Middleware;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Validation\ValidationException;
+
 use Sentry\Laravel\Integration;
+use Sentry\Laravel\Facades\Sentry;
+
 use Symfony\Component\HttpKernel\Exception\MethodNotAllowedHttpException;
 use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
 use Symfony\Component\HttpKernel\Exception\TooManyRequestsHttpException;
@@ -27,7 +30,7 @@ return Application::configure(basePath: dirname(__DIR__))
     })
     ->withExceptions(function (Exceptions $exceptions): void {
         Integration::handles($exceptions);
-        
+
         $exceptions->render(function (Exception $e) {
 
             return match (true) {
@@ -89,27 +92,7 @@ return Application::configure(basePath: dirname(__DIR__))
                     'retry_after' => $e->getHeaders()['Retry-After'] ?? null
                 ], 429),
 
-                // Database connection errors
-                $e instanceof QueryException => response()->json([
-                    'success' => false,
-                    'message' => 'Database error',
-                    'error' => config('app.debug') ? $e->getMessage() : 'A database error occurred',
-                    'error_code' => 'DATABASE_ERROR'
-                ], 500),
 
-
-                // Generic server errors (500)
-                default => response()->json([
-                    'success' => false,
-                    'message' => 'Internal server error',
-                    'error' => config('app.debug') ? $e->getMessage() : 'An unexpected error occurred',
-                    'error_code' => 'INTERNAL_SERVER_ERROR',
-                    ...(config('app.debug') ? [
-                        'trace' => $e->getTraceAsString(),
-                        'file' => $e->getFile(),
-                        'line' => $e->getLine()
-                    ] : [])
-                ], 500)
             };
         });
     })->create();

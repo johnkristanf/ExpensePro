@@ -13,8 +13,6 @@ WORKDIR /var/www
 
 COPY . .
 
-RUN composer install --no-interaction --prefer-dist --optimize-autoloader
-
 # Create entrypoint script for more robust startup
 RUN chmod +x /var/www/entrypoint.sh
 

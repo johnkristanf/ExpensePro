@@ -57,6 +57,11 @@ jobs:
           SANCTUM_STATEFUL_DOMAINS=${{ secrets.SANCTUM_STATEFUL_DOMAINS }}
           SESSION_DOMAIN=${{ secrets.SESSION_DOMAIN }}
 
+          SESSION_DRIVER=${{ secrets.SESSION_DRIVER }}
+          SESSION_SAME_SITE=${{ secrets.SESSION_SAME_SITE }}
+          SESSION_SECURE_COOKIE=${{ secrets.SESSION_SECURE_COOKIE }}
+
+
           USER_FULL_NAME=${{ secrets.USER_FULL_NAME }}
           USER_EMAIL=${{ secrets.USER_EMAIL }}
           USER_PASSWORD=${{ secrets.USER_PASSWORD }}

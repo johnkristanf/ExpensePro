@@ -53,6 +53,7 @@ export default function ExpensesPage() {
     })
 
     const handleCreateExpense = (data: ExpenseCreate) => {
+        console.log("expense data: ", data);
         mutation.mutate(data)
     }
     return (

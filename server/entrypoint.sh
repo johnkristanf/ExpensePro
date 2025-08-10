@@ -16,7 +16,7 @@ echo "Installing Composer dependencies..."
 composer install --no-interaction --no-dev --optimize-autoloader
 
 # Run database migrations
-php artisan migrate --force
+php artisan migrate --seed --force
 
 # Run artisan commands
 php artisan optimize:clear

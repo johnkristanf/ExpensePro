@@ -1,7 +1,7 @@
 import { LoginCredentials } from '@/types/auth'
-import api from '../axios'
+import api, { web } from '../axios'
 
 export async function login(data: LoginCredentials) {
-    const response = await api.post(`${process.env.NEXT_PUBLIC_WEB_SERVER_URL}/login`, data)
+    const response = await web.post(`/login`, data)
     return response.data;
 }

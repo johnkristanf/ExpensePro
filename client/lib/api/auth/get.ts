@@ -1,5 +1,5 @@
-import api from '../axios'
+import { web } from '../axios'
 
 export async function getCrsfCookie() {
-    await api.get(`/sanctum/csrf-cookie`)
+    await web.get(`/sanctum/csrf-cookie`)
 }

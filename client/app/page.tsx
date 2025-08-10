@@ -23,8 +23,8 @@ export default function LandingPage() {
     const loginMutation = useMutation({
         mutationFn: login,
         onSuccess: (data) => {
-            console.log('Login Success: ', data)
             if (data.success) {
+                console.log('Login Success: ', data)
                 reset()
                 router.replace('/dashboard')
             }
@@ -37,7 +37,6 @@ export default function LandingPage() {
     const onSubmit = async (data: LoginCredentials) => {
         setIsLoading(true)
         await getCrsfCookie()
-        console.log('LOGIN AFTER GETTING COOKIE')
         loginMutation.mutate(data)
         setIsLoading(false)
     }

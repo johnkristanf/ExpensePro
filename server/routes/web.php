@@ -13,5 +13,8 @@ Route::get('/clear-cache', function () {
     return 'Laravel Cache Cleared Successfully';
 });
 
+Route::get('/debug-sentry', function () {
+    throw new Exception('My first Sentry error!');
+});
 
 Route::post('/login', [AuthController::class, 'login']);

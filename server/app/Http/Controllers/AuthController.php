@@ -39,6 +39,7 @@ class AuthController extends Controller
         return response()->json([
             'success' => true,
             'message' => 'Logged out successfully'
-        ]);
+        ])->withoutCookie(config('session.cookie'))
+            ->withoutCookie('XSRF-TOKEN');
     }
 }

@@ -12,13 +12,13 @@ import { formatAmount, formatNumericDateToWordDate } from '@/lib/utils'
 import { BudgetCreate, BudgetEdit, Budgets } from '@/types/budgets'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { toast } from 'sonner'
-import { Pencil, Trash } from 'lucide-react'
 import { Progress } from '@/components/ui/progress'
 import { BudgetFetchComponent } from '@/enums/budgets'
 import TextLoader from '@/components/text-loader'
-import { FieldSchema } from '@/types/form'
 import EditFormDialog from '@/components/edit-form-dialog'
 import { editBudget } from '@/lib/api/budgets/patch'
+import { Trash } from 'lucide-react'
+import { budgetToFieldSchemas } from '@/lib/helpers/field-mapping'
 
 export default function BudgetsPage() {
     const queryClient = useQueryClient()
@@ -63,39 +63,6 @@ export default function BudgetsPage() {
 
     const handleEditBudget = (data: BudgetEdit) => {
         editMutation.mutate(data)
-    }
-
-    // MAPPED BUDGETS DATA FROM DB TO THE DYNAMIC DIALOG FIELDS
-    const budgetToFieldSchemas = (budget: Budgets): FieldSchema[] => {
-        const modifiedFields = [
-            {
-                name: 'name',
-                label: 'Budget Name',
-                type: InputType.INPUT,
-                inputType: 'text',
-                placeholder: 'Enter budget name',
-                defaultValue: budget.name,
-            },
-            {
-                name: 'total_amount',
-                label: 'Total Amount',
-                type: InputType.INPUT,
-
-                inputType: 'number',
-                placeholder: 'Enter total budget amount',
-                defaultValue: budget.total_amount,
-            },
-            {
-                name: 'budget_period',
-                label: 'Budget Period',
-                type: InputType.INPUT,
-                inputType: 'date',
-                placeholder: 'Select budget period',
-                defaultValue: budget.budget_period,
-            },
-        ]
-
-        return modifiedFields
     }
 
     return (
@@ -150,7 +117,9 @@ export default function BudgetsPage() {
                                 <div className="flex flex-col gap-1 text-sm mt-1">
                                     <h1>
                                         Budget Period:{' '}
-                                        {formatNumericDateToWordDate(budget.budget_period)}
+                                        {budget.budget_period
+                                            ? formatNumericDateToWordDate(budget.budget_period)
+                                            : 'N/A'}
                                     </h1>
                                 </div>
                                 <CardAction>

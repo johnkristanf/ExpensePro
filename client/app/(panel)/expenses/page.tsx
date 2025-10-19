@@ -39,6 +39,8 @@ export default function ExpensesPage() {
         queryFn: fetchExpenses,
     })
 
+    console.log('expenses: ', expenses)
+
     // CREATE CATEGORY MUTATION
     const mutation = useMutation({
         mutationFn: createExpenses,
@@ -47,13 +49,14 @@ export default function ExpensesPage() {
             toast.success('Expenses Added Successfully')
         },
 
-        onError: (error) => {
-            toast.error(error.message)
+        onError: (error: any) => {
+            console.log("error: ", error);
+            toast.error(error.response.data.message)
         },
     })
 
     const handleCreateExpense = (data: ExpenseCreate) => {
-        console.log("expense data: ", data);
+        console.log('expense data: ', data)
         mutation.mutate(data)
     }
     return (
@@ -116,7 +119,7 @@ export default function ExpensesPage() {
                         },
 
                         {
-                            name: 'date',
+                            name: 'date_spent',
                             label: 'Date Spent',
                             type: InputType.INPUT,
                             inputType: FieldInputType.DATE,

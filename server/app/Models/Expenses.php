@@ -12,6 +12,11 @@ class Expenses extends Model
     ];
 
 
+    public function budgets(): BelongsTo
+    {
+        return $this->belongsTo(Budgets::class, 'budget_id');
+    }
+
     public function categories(): BelongsTo
     {
         return $this->belongsTo(Categories::class, 'category_id');

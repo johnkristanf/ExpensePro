@@ -1,3 +1,4 @@
+import { Budgets } from "./budgets"
 import { Categories } from "./categories"
 
 export type Expenses = {
@@ -5,10 +6,13 @@ export type Expenses = {
   description: string | null
   amount: number
   spending_type: string
-  date: string // Date in ISO format (e.g. "2025-07-20")
+  date_spent: string 
   category_id: number
+  created_at: string 
+
+  // Relationed data
   categories: Categories
-  created_at: string // Timestamp (e.g. "2025-07-20T15:32:10.000000Z")
+  budgets: Budgets
 }
 
 export type ExpenseCreate = {

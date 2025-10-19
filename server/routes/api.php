@@ -32,12 +32,4 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/income/source/{month}', [IncomeController::class, 'getIncomePerSource']);
     Route::post('/income', [IncomeController::class, 'store']);
 
-    Route::get('/debug-sentry', function () {
-        throw new Exception('My first Sentry error!');
-    });
-
-    Route::get('/test-slow', function () {
-        sleep(2); // simulate slow request
-        return "Done";
-    });
 });

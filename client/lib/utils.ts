@@ -8,6 +8,11 @@ export function cn(...inputs: ClassValue[]) {
 export function formatNumericDateToWordDate(dateStr: string) {
     const date = new Date(dateStr)
 
+    if (isNaN(date.getTime())) {
+        console.warn('Invalid date string passed to formatNumericDateToWordDate:', dateStr)
+        return '' // or return a fallback like 'Invalid date'
+    }
+
     const formatted = new Intl.DateTimeFormat('en-US', {
         year: 'numeric',
         month: 'short',
@@ -42,7 +47,6 @@ export function generateMonthlyObjects(year: number): { value: string; label: st
 
     return [{ value: 'all', label: 'All Months' }, ...months]
 }
-
 
 export function capitalizeFirstLetter(str: string) {
     return str.charAt(0).toUpperCase() + str.slice(1)

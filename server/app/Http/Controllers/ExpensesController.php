@@ -5,14 +5,21 @@ namespace App\Http\Controllers;
 use App\Helpers\MonthUtils;
 use App\Models\Budgets;
 use App\Models\Expenses;
+use App\Services\ExpensesService;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 
 class ExpensesController extends Controller
 {
+    public function __construct(protected ExpensesService $expensesService){}
+
     public function index()
     {
-        $expenses = Expenses::with('categories')->latest()->get();
+        $expenses = Expenses::with(['budgets:id,name', 'categories'])
+            ->orderBy('date_spent', 'desc')
+            ->get();
+
         return response()->json($expenses);
     }
 
@@ -24,32 +31,18 @@ class ExpensesController extends Controller
             'description' => 'required|string',
             'amount' => 'required|numeric|min:0',
             'spending_type' => 'required',
-            'date' => 'required|date',
+            'date_spent' => 'required|date',
         ]);
 
-        // Step 1: Fetch the Budget
-        $budget = Budgets::find($validated['budget_id']);
-        if (!$budget) {
-            return response()->json(['error' => 'Budget not found.'], 404);
-        }
+        $expense = DB::transaction(function () use ($validated) {
+            // Create expense
+            $expense = $this->expensesService->createAndLoadExpense($validated);
 
-        // Step 2: Deduct the expense from the budget's current_amount
-        $budget->current_amount -= $validated['amount'];
+            // Deduct selected budget
+            $this->expensesService->deductBudget($validated['budget_id'], $validated['amount']);
 
-        if ($budget->current_amount <= 0) {
-            return response()->json(['error' => 'Insufficient budget.'], 422);
-        }
-
-        $budget->save();
-
-        // Step 3: Create the expense (with the budget_id still linked)
-        $expense = Expenses::create([
-            'category_id' => $validated['category_id'],
-            'description' => $validated['description'],
-            'amount' => $validated['amount'],
-            'spending_type' => $validated['spending_type'],
-            'date' => $validated['date'],
-        ]);
+            return $expense;
+        });
 
         return response()->json([
             'message' => 'Expense created successfully',

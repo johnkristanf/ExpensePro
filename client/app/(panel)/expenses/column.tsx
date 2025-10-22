@@ -26,7 +26,7 @@ export const columns: ColumnDef<Expenses>[] = [
     {
         accessorKey: 'budgets.name',
         header: 'Budget',
-        cell: ({ row }) => <span>{row.original.budgets.name || 'N/A'}</span>,
+        cell: ({ row }) => <span>{row.original.budgets?.name ?? 'N/A'}</span>,
     },
     {
         accessorKey: 'amount',

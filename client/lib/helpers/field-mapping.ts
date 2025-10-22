@@ -51,8 +51,8 @@ export const expensesToFieldSchemas = (
             options:
                 categories &&
                 categories.map((cat) => ({
-                    label: cat.name,
-                    value: cat.id.toString(),
+                    label: cat?.name,
+                    value: cat?.id.toString(),
                 })),
         },
 
@@ -60,7 +60,7 @@ export const expensesToFieldSchemas = (
             name: 'budget_id',
             label: 'Budget',
             type: InputType.SELECT,
-            defaultValue: expense.budgets.id.toString(),
+            defaultValue: expense.budgets?.id.toString(),
             options:
                 budgets &&
                 budgets.map((bud) => ({

@@ -70,8 +70,8 @@ class ExpensesController extends Controller
             // Optional: Default to current year if not passed separately
             $year = now()->year;
 
-            $total = Expenses::whereMonth('date', $monthMap[$month])
-                ->whereYear('date', $year)
+            $total = Expenses::whereMonth('date_spent', $monthMap[$month])
+                ->whereYear('date_spent', $year)
                 ->sum('amount');
         }
 
@@ -97,8 +97,8 @@ class ExpensesController extends Controller
             $monthNumber = $monthMap[$month];
             $year = now()->year;
 
-            $query->whereMonth('date', $monthNumber)
-                ->whereYear('date', $year);
+            $query->whereMonth('date_spent', $monthNumber)
+                ->whereYear('date_spent', $year);
         }
 
         $results = $query->selectRaw('category_id, SUM(amount) as total')

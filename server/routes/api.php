@@ -1,14 +1,11 @@
 <?php
 
-use App\Http\Controllers\AuthController;
 use App\Http\Controllers\BudgetsController;
 use App\Http\Controllers\CategoriesController;
 use App\Http\Controllers\ExpensesController;
 use App\Http\Controllers\IncomeController;
 use App\Http\Controllers\SavingsController;
-use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
-
 
 Route::middleware('auth:sanctum')->group(function () {
     Route::get('/categories', [CategoriesController::class, 'index']);

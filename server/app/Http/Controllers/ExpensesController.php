@@ -50,11 +50,35 @@ class ExpensesController extends Controller
         ], 201);
     }
 
+    public function destroy($id)
+    {
+        $expense = Expenses::find($id);
 
-    public function getMonthlyExpenses(string $month)
+        if (!$expense) {
+            return response()->json([
+                'message' => 'Expense not found',
+            ], 404);
+        }
+
+        DB::transaction(function () use ($expense) {
+            // Restore the budget amount
+            $this->expensesService->restoreBudget($expense->budget_id, $expense->amount);
+
+            // Delete the expense
+            $expense->delete();
+        });
+
+        return response()->json([
+            'message' => 'Expense deleted successfully',
+        ], 200);
+    }
+
+
+    public function getMonthlyExpenses(string $month, Request $request)
     {
 
         $monthMap = MonthUtils::LoadMonthMap();
+        $year = $request->query('year', now()->year);
 
         if (empty($month)) {
             return response()->json([
@@ -63,13 +87,10 @@ class ExpensesController extends Controller
         }
 
         if ($month === 'all') {
-            $total = Expenses::sum('amount');
+            $total = Expenses::whereYear('date_spent', $year)->sum('amount');
         }
 
         if (array_key_exists($month, $monthMap)) {
-            // Optional: Default to current year if not passed separately
-            $year = now()->year;
-
             $total = Expenses::whereMonth('date_spent', $monthMap[$month])
                 ->whereYear('date_spent', $year)
                 ->sum('amount');
@@ -81,11 +102,12 @@ class ExpensesController extends Controller
     }
 
 
-    public function getExpensesPerCategory(string $month)
+    public function getExpensesPerCategory(string $month, Request $request)
     {
 
         $monthMap = MonthUtils::LoadMonthMap();
         $query = Expenses::with('categories:id,name');
+        $year = $request->query('year', now()->year);
 
         if (empty($month)) {
             return response()->json([
@@ -95,10 +117,11 @@ class ExpensesController extends Controller
 
         if ($month !== 'all') {
             $monthNumber = $monthMap[$month];
-            $year = now()->year;
 
             $query->whereMonth('date_spent', $monthNumber)
                 ->whereYear('date_spent', $year);
+        } else {
+            $query->whereYear('date_spent', $year);
         }
 
         $results = $query->selectRaw('category_id, SUM(amount) as total')

@@ -15,14 +15,17 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/expenses/{month}', [ExpensesController::class, 'getMonthlyExpenses']);
     Route::get('/expenses/category/{month}', [ExpensesController::class, 'getExpensesPerCategory']);
     Route::post('/expenses', [ExpensesController::class, 'store']);
+    Route::delete('/expenses/{id}', [ExpensesController::class, 'destroy']);
 
     Route::get('/savings', [SavingsController::class, 'index']);
     Route::post('/savings', [SavingsController::class, 'store']);
     Route::patch('/savings/{id}', [SavingsController::class, 'update']);
+    Route::patch('/savings/{id}/adjust', [SavingsController::class, 'adjustBalance']);
 
     Route::get('/budgets', [BudgetsController::class, 'index']);
     Route::post('/budgets', [BudgetsController::class, 'store']);
     Route::patch('/budgets/{id}', [BudgetsController::class, 'update']);
+    Route::patch('/budgets/{id}/adjust', [BudgetsController::class, 'adjustBalance']);
 
     Route::get('/income', [IncomeController::class, 'index']);
     Route::get('/income/{month}', [IncomeController::class, 'getMonthlyIncome']);

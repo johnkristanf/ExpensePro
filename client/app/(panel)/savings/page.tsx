@@ -18,6 +18,7 @@ import TextLoader from '@/components/text-loader'
 import { FieldSchema } from '@/types/form'
 import EditFormDialog from '@/components/edit-form-dialog'
 import { editSavings } from '@/lib/api/savings/patch'
+import AdjustmentDialog from '@/components/adjustment-dialog'
 
 export default function SavingsPage() {
     const queryClient = useQueryClient()
@@ -73,14 +74,7 @@ export default function SavingsPage() {
                 placeholder: 'Enter Goal',
                 defaultValue: saving.goal_name,
             },
-            {
-                name: 'current_amount',
-                label: 'Current Amount',
-                type: InputType.INPUT,
-                inputType: 'number',
-                placeholder: 'Enter current amount',
-                defaultValue: saving.current_amount,
-            },
+
             {
                 name: 'target_amount',
                 label: 'Target Amount',
@@ -130,12 +124,7 @@ export default function SavingsPage() {
                             placeholder: 'e.g. Emergency Fund, Laptop',
                         },
 
-                        {
-                            name: 'current_amount',
-                            label: 'Current Amount',
-                            type: InputType.INPUT,
-                            inputType: FieldInputType.NUMBER,
-                        },
+
 
                         {
                             name: 'target_amount',
@@ -195,7 +184,21 @@ export default function SavingsPage() {
                                 </div>
 
                                 <CardAction>
-                                    <div className="flex gap-1 items-center">
+                                    <div className="flex gap-2 items-center">
+                                        <AdjustmentDialog
+                                            id={saving.id}
+                                            name={saving.goal_name}
+                                            currentAmount={saving.current_amount}
+                                            type="increment"
+                                            domain="savings"
+                                        />
+                                        <AdjustmentDialog
+                                            id={saving.id}
+                                            name={saving.goal_name}
+                                            currentAmount={saving.current_amount}
+                                            type="decrement"
+                                            domain="savings"
+                                        />
                                         <EditFormDialog
                                             title="Edit Savings"
                                             fields={savingsToFieldSchemas(saving)}

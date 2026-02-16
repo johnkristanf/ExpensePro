@@ -19,6 +19,7 @@ import EditFormDialog from '@/components/edit-form-dialog'
 import { editBudget } from '@/lib/api/budgets/patch'
 import { Trash } from 'lucide-react'
 import { budgetToFieldSchemas } from '@/lib/helpers/field-mapping'
+import AdjustmentDialog from '@/components/adjustment-dialog'
 
 export default function BudgetsPage() {
     const queryClient = useQueryClient()
@@ -123,7 +124,22 @@ export default function BudgetsPage() {
                                     </h1>
                                 </div>
                                 <CardAction>
-                                    <div className="flex gap-1 items-center">
+                                    <div className="flex gap-2 items-center">
+
+                                        <AdjustmentDialog
+                                            id={budget.id}
+                                            name={budget.name}
+                                            currentAmount={budget.current_amount}
+                                            type="increment"
+                                            domain="budget"
+                                        />
+                                        <AdjustmentDialog
+                                            id={budget.id}
+                                            name={budget.name}
+                                            currentAmount={budget.current_amount}
+                                            type="decrement"
+                                            domain="budget"
+                                        />
                                         <EditFormDialog
                                             title="Edit Budget"
                                             fields={budgetToFieldSchemas(budget)}

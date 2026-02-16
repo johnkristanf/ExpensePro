@@ -12,8 +12,6 @@ type MergedCardData = IncomeCardData | ExpensesCardData
 export interface DashboardCardProps {
     title: string
     data: MergedCardData
-    selectedMonth: string
-    setSelectedMonth: Dispatch<SetStateAction<string>>
 }
 
 export type IncomeChartData = {

@@ -16,8 +16,11 @@ import { useQuery } from '@tanstack/react-query'
 import { fetchCategories } from '@/lib/api/categories/get'
 import { fetchBudgets } from '@/lib/api/budgets/get'
 import { BudgetFetchComponent } from '@/enums/budgets'
+import DeleteConfirmationDialog from "@/components/delete-confirmation-dialog"
 
-export const columns: ColumnDef<Expenses>[] = [
+
+export const columns = (onDelete: (id: number) => void): ColumnDef<Expenses>[] => [
+
     {
         accessorKey: 'description',
         header: 'Description',
@@ -77,7 +80,7 @@ export const columns: ColumnDef<Expenses>[] = [
             if (isCategoriesLoading || isBudgetsLoading || !categories || !budgets) return null;
 
             // Edit expense mutatation
-            
+
 
             return (
                 <div className="flex items-center gap-2">
@@ -86,7 +89,16 @@ export const columns: ColumnDef<Expenses>[] = [
                         fields={expensesToFieldSchemas(expense, categories, budgets)}
                         onSubmit={data => console.log('edited expense data:', data)}
                     />
-                    <Trash className="size-4 hover:cursor-pointer hover:opacity-75 text-red-800" />
+                    <DeleteConfirmationDialog
+                        trigger={
+                            <Trash
+                                className="size-4 hover:cursor-pointer hover:opacity-75 text-red-800"
+                            />
+                        }
+                        title="Delete Expense"
+                        description="Are you sure you want to delete this expense? This action cannot be undone and the amount will be restored to the budget."
+                        onConfirm={() => onDelete(expense.id)}
+                    />
                 </div>
             );
         },

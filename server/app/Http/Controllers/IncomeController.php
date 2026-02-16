@@ -41,17 +41,15 @@ class IncomeController extends Controller
     }
 
 
-    public function getMonthlyIncome(string $month)
+    public function getMonthlyIncome(string $month, Request $request)
     {
 
         $monthMap = MonthUtils::LoadMonthMap();
+        $year = $request->query('year', now()->year);
 
         if ($month === 'all') {
-            $total = Income::sum('amount');
+            $total = Income::whereYear('date_acquired', $year)->sum('amount');
         } elseif (array_key_exists($month, $monthMap)) {
-            // Optional: Default to current year if not passed separately
-            $year = now()->year;
-
             $total = Income::whereMonth('date_acquired', $monthMap[$month])
                 ->whereYear('date_acquired', $year)
                 ->sum('amount');
@@ -68,9 +66,10 @@ class IncomeController extends Controller
 
 
 
-    public function getIncomePerSource(string $month)
+    public function getIncomePerSource(string $month, Request $request)
     {
         $monthMap = MonthUtils::LoadMonthMap();
+        $year = $request->query('year', now()->year);
 
         // Start query on income table
         $query = DB::table('income');
@@ -83,10 +82,11 @@ class IncomeController extends Controller
             }
 
             $monthNum = $monthMap[$month];
-            $year = now()->year;
 
             $query->whereMonth('date_acquired', $monthNum)
                 ->whereYear('date_acquired', $year);
+        } else {
+            $query->whereYear('date_acquired', $year);
         }
 
         $results = $query->select('source', DB::raw('SUM(amount) as amount'))

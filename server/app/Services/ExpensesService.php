@@ -40,4 +40,18 @@ class ExpensesService {
             'date_spent' => $data['date_spent'],
         ]);
     }
+
+    public function restoreBudget($budgetID, $amount)
+    {
+        $budget = Budgets::find($budgetID);
+        if (!$budget) {
+            throw new Exception('Budget not found.');
+        }
+
+        // Add the expense amount back to the budget
+        $budget->current_amount += $amount;
+        $budget->save();
+
+        return $budget;
+    }
 }

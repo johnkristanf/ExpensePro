@@ -95,4 +95,50 @@ class BudgetsController extends Controller
             ], 500);
         }
     }
+
+    public function adjustBalance(Request $request, int $id)
+    {
+        try {
+            $validated = $request->validate([
+                'amount' => 'required|numeric|min:0.01',
+                'type' => 'required|in:increment,decrement',
+            ]);
+
+            $budget = Budgets::findOrFail($id);
+            $amount = $validated['amount'];
+            $type = $validated['type'];
+
+            if ($type === 'decrement') {
+                if ($budget->current_amount - $amount < 0) {
+                     return response()->json([
+                        'message' => 'Insufficient budget balance for this deduction.',
+                    ], 400);
+                }
+                $budget->decrement('current_amount', $amount);
+            } else {
+                $budget->increment('current_amount', $amount);
+            }
+
+            return response()->json([
+                'message' => 'Budget adjusted successfully.',
+                'data' => $budget->fresh(),
+            ]);
+
+        } catch (ValidationException $e) {
+             return response()->json([
+                'error' => 'Validation Error',
+                'messages' => $e->errors(),
+            ], 422);
+
+        } catch (Exception $e) {
+            Log::error("Failed to adjust budget balance", [
+                'error' => $e->getMessage(),
+                'budget_id' => $id
+            ]);
+
+            return response()->json([
+                'error' => 'Server error. Failed to adjust budget.',
+            ], 500);
+        }
+    }
 }

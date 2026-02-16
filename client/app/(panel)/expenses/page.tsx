@@ -8,10 +8,11 @@ import FormDialog from '@/components/create-form-dialog'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { toast } from 'sonner'
 import { createExpenses } from '@/lib/api/expenses/post'
+import { deleteExpense } from '@/lib/api/expenses/delete'
 import { FieldInputType, InputType } from '@/enums/form'
 import { SpendingType } from '@/enums/expenses'
 import { fetchCategories } from '@/lib/api/categories/get'
-import { columns } from './column'
+import { columns as getColumns } from './column'
 import { fetchExpenses } from '@/lib/api/expenses/get'
 import { fetchBudgets } from '@/lib/api/budgets/get'
 import { BudgetFetchComponent } from '@/enums/budgets'
@@ -39,9 +40,7 @@ export default function ExpensesPage() {
         queryFn: fetchExpenses,
     })
 
-    console.log('expenses: ', expenses)
-
-    // CREATE CATEGORY MUTATION
+    // CREATE EXPENSE MUTATION
     const mutation = useMutation({
         mutationFn: createExpenses,
         onSuccess: () => {
@@ -55,8 +54,26 @@ export default function ExpensesPage() {
         },
     })
 
+    // DELETE EXPENSE MUTATION
+    const deleteMutation = useMutation({
+        mutationFn: deleteExpense,
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: ['expenses'] })
+            queryClient.invalidateQueries({ queryKey: ['budgets'] })
+            toast.success('Expense Deleted Successfully')
+        },
+        onError: (error: any) => {
+            console.log("error: ", error);
+            toast.error(error.response?.data?.message || 'Failed to delete expense')
+        },
+    })
+
     const handleCreateExpense = (data: ExpenseCreate) => {
         mutation.mutate(data)
+    }
+
+    const handleDeleteExpense = (id: number) => {
+        deleteMutation.mutate(id)
     }
     return (
         <div className="container mx-auto py-5">
@@ -132,7 +149,7 @@ export default function ExpensesPage() {
                     <TextLoader text="Loading Expenses..." />
                 </div>
             ) : (
-                <DataTable columns={columns} data={expenses} />
+                <DataTable columns={getColumns(handleDeleteExpense)} data={expenses} />
             )}
         </div>
     )

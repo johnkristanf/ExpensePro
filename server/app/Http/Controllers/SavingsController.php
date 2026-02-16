@@ -44,7 +44,6 @@ class SavingsController extends Controller
             $validated = $request->validate([
                 'goal_name' => 'required|string|max:255',
                 'target_amount' => 'required|numeric|min:0',
-                'current_amount' => 'required|numeric|min:0',
                 'start_date' => 'required|date',
                 'target_date' => 'required|date|after_or_equal:start_date',
             ]);
@@ -71,6 +70,52 @@ class SavingsController extends Controller
 
             return response()->json([
                 'error' => 'Server error. Failed to edit budget.',
+            ], 500);
+        }
+    }
+
+    public function adjustBalance(Request $request, int $id)
+    {
+        try {
+            $validated = $request->validate([
+                'amount' => 'required|numeric|min:0.01',
+                'type' => 'required|in:increment,decrement',
+            ]);
+
+            $saving = Savings::findOrFail($id);
+            $amount = $validated['amount'];
+            $type = $validated['type'];
+
+            if ($type === 'decrement') {
+                if ($saving->current_amount - $amount < 0) {
+                     return response()->json([
+                        'message' => 'Insufficient savings balance for this deduction.',
+                    ], 400);
+                }
+                $saving->decrement('current_amount', $amount);
+            } else {
+                $saving->increment('current_amount', $amount);
+            }
+
+            return response()->json([
+                'message' => 'Savings adjusted successfully.',
+                'data' => $saving->fresh(),
+            ]);
+
+        } catch (ValidationException $e) {
+             return response()->json([
+                'error' => 'Validation Error',
+                'messages' => $e->errors(),
+            ], 422);
+
+        } catch (Exception $e) {
+            Log::error("Failed to adjust savings balance", [
+                'error' => $e->getMessage(),
+                'saving_id' => $id
+            ]);
+
+            return response()->json([
+                'error' => 'Server error. Failed to adjust savings.',
             ], 500);
         }
     }

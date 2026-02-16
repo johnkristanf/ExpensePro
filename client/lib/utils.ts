@@ -48,6 +48,18 @@ export function generateMonthlyObjects(year: number): { value: string; label: st
     return [{ value: 'all', label: 'All Months' }, ...months]
 }
 
+export function generateYearOptions(): { value: number; label: string }[] {
+    const currentYear = new Date().getFullYear()
+    const startYear = 2025
+    const years = []
+
+    for (let year = currentYear; year >= startYear; year--) {
+        years.push({ value: year, label: year.toString() })
+    }
+
+    return years
+}
+
 export function capitalizeFirstLetter(str: string) {
     return str.charAt(0).toUpperCase() + str.slice(1)
 }

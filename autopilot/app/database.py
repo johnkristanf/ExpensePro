@@ -1,42 +1,28 @@
-from sqlalchemy.ext.asyncio import create_async_engine, async_sessionmaker, AsyncSession
-from sqlalchemy.orm import DeclarativeBase
+import asyncpg
 from typing import AsyncGenerator
 from contextlib import asynccontextmanager
 from app.config import settings
 
-class Base(DeclarativeBase):
-    pass
-
 class Database:
-    _engine = None
-    _session_factory = None
+    _pool: asyncpg.Pool | None = None
 
     @classmethod
-    def connect(cls):
-        cls._engine = create_async_engine(settings.DATABASE_URL, echo=False)
-        cls._session_factory = async_sessionmaker(
-            bind=cls._engine,
-            autoflush=False,
-            expire_on_commit=False,
-            class_=AsyncSession
-        )
+    async def connect(cls):
+        if cls._pool is None:
+            cls._pool = await asyncpg.create_pool(
+                dsn=settings.DATABASE_URL,
+                min_size=1,
+                max_size=10
+            )
 
     @classmethod
     async def close(cls):
-        """Close the database connection."""
-        if cls._engine:
-            await cls._engine.dispose()
-            cls._engine = None
-            cls._session_factory = None
+        if cls._pool:
+            await cls._pool.close()
+            cls._pool = None
 
     @classmethod
     @asynccontextmanager
-    async def get_async_session(cls) -> AsyncGenerator[AsyncSession, None]:
-        """Context manager for database sessions."""
-        if cls._session_factory is None:
-            raise RuntimeError("Database is not connected. Call connect() first.")
-        async with cls._session_factory() as session:
-            try:
-                yield session
-            finally:
-                await session.close()
+    async def get_async_session(cls) -> AsyncGenerator[asyncpg.Connection, None]:
+        async with cls._pool.acquire() as connection:
+            yield connection

@@ -23,16 +23,11 @@ for name, node_func in nodes.items():
 # Define transitions
 builder.add_edge(START, "parse_input")
 
-transitions = {
-    "parse_input": {"resolve_category": "resolve_category", "end": END},
-    "resolve_category": {"create_category": "create_category", "resolve_budget": "resolve_budget"},
-    "create_category": {"resolve_budget": "resolve_budget"},
-    "resolve_budget": {"insert_expense": "insert_expense", "end": END},
-    "insert_expense": {"end": END},
-}
-
-for source, mapping in transitions.items():
-    builder.add_conditional_edges(source, router, mapping)
+builder.add_conditional_edges("parse_input", router, {"resolve_category": "resolve_category", "end": END})
+builder.add_conditional_edges("resolve_category", router, {"create_category": "create_category", "resolve_budget": "resolve_budget"})
+builder.add_edge("create_category", "resolve_budget")
+builder.add_conditional_edges("resolve_budget", router, {"insert_expense": "insert_expense", "end": END})
+builder.add_edge("insert_expense", END)
 
 memory = MemorySaver()
 graph = builder.compile(checkpointer=memory)

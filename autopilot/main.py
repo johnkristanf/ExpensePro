@@ -4,7 +4,7 @@ import uvicorn
 from fastapi import FastAPI
 from app.database import Database
 from contextlib import asynccontextmanager
-from fastapi import Depends
+from langchain_core.messages import HumanMessage
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
@@ -15,8 +15,6 @@ async def lifespan(app: FastAPI):
 
 app = FastAPI(lifespan=lifespan)
 
-import uuid
-from langchain_core.messages import HumanMessage
 
 @app.post("/chat/{user_id}")
 async def chat(payload: dict, user_id: str):
@@ -26,7 +24,8 @@ async def chat(payload: dict, user_id: str):
     
     # We need to pass the new message to the state
     inputs = {
-        "messages": [HumanMessage(content=user_input)], 
+        "messages": [HumanMessage(content=user_input)],
+        "current_index": 0 
     }
     
     result = await graph.ainvoke(inputs, config=config)

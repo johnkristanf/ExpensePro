@@ -15,14 +15,12 @@ async def lifespan(app: FastAPI):
 
 app = FastAPI(lifespan=lifespan)
 
-
 import uuid
 from langchain_core.messages import HumanMessage
 
-@app.post("/chat")
-async def chat(payload: dict):
-    thread_id = payload.get("thread_id", str(uuid.uuid4()))
-    config = {"configurable": {"thread_id": thread_id}}
+@app.post("/chat/{user_id}")
+async def chat(payload: dict, user_id: str):
+    config = {"configurable": {"thread_id": user_id}}
     
     user_input = payload["user_input"]
     
@@ -34,7 +32,7 @@ async def chat(payload: dict):
     result = await graph.ainvoke(inputs, config=config)
     return {
         "data": result,
-        "thread_id": thread_id
+        "thread_id": user_id
     }
 
 
@@ -44,4 +42,4 @@ async def health_check():
 
 
 if __name__ == "__main__":
-    uvicorn.run("main:app", host="0.0.0.0", port=8000, reload=True)
+    uvicorn.run("main:app", host="0.0.0.0", port=8001, reload=True)

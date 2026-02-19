@@ -50,7 +50,7 @@ async def create_expense(
     
     try:
         async with Database.get_async_session() as conn:
-            expense_id = await conn.fetchval(
+            await conn.fetchval(
                 query, 
                 description, 
                 float(amount), 

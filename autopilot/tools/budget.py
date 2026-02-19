@@ -35,3 +35,35 @@ async def get_budgets_by_name(name_query: str) -> str:
             
     except Exception as e:
         return f"Error fetching budgets: {str(e)}"
+
+@tool
+async def deduct_budget_amount(budget_id: int, amount: float) -> str:
+    """
+    Deducts the expense amount from the budget's current_amount.
+    
+    Args:
+        budget_id: The ID of the budget to update.
+        amount: The amount to deduct from the current_amount.
+    """
+
+    query = """
+    UPDATE public.budgets
+    SET current_amount = current_amount - $1,
+        updated_at = NOW()
+    WHERE id = $2
+    RETURNING current_amount;
+    """
+
+    print(f"BUDGET ID SA TOOL: {budget_id}")
+    print(f"BUDGET AMOUNT SA TOOL: {amount}")
+    
+    try:
+        async with Database.get_async_session() as conn:
+            new_amount = await conn.fetchval(query, float(amount), int(budget_id))
+            if new_amount is None:
+                return f"Error: Budget with ID {budget_id} not found."
+                
+            return f"Budget updated successfully. New current amount: {new_amount}"
+            
+    except Exception as e:
+        return f"Error updating budget: {str(e)}"

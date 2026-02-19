@@ -3,6 +3,7 @@ from datetime import datetime
 import re
 
 from tools.expense import create_expense
+from tools.budget import deduct_budget_amount
 from tools.budget import get_budgets_by_name
 from tools.categories import create_category, get_categories_by_name
 
@@ -114,32 +115,16 @@ async def resolve_budget(state: ExpenseState):
     match = re.search(r"'id': (\d+)", result)
 
     if match:
-        return {"budget_id": int(match.group(1)), "action": "insert_expense"}
+        return {"budget_id": int(match.group(1)), "action": "ask_confirmation"}
 
     return {"error": "Failed to resolve budget."}
 
 
 async def insert_expense_node(state: ExpenseState):
-    """
-    Why does insert_expense_node loop infinitely after adding the category condition loop in the graph?
-    ---
-    The infinite loop happens due to the node transitions in the graph (see graph.py), specifically:
-    builder.add_conditional_edges(
-        "insert_expense", router, {"resolve_category": "resolve_category", "end": END}
-    )
-    If "action" ends up as "resolve_category", you end up looping between insert_expense_node and resolve_category unless state is updated properly.
+    if state.get("action") == "cancel":
+        return {"response": "Expense insertion cancelled.", "action": "end"}
 
-    The loop happens if after incrementing current_index, the next expense item's category is not found and it triggers category creation, or the state/actions are set such that you keep returning to "resolve_category" without ever advancing or hitting "end".
-
-    One common cause: If the state["current_index"] is not properly incremented or if the same expense keeps being processed (for example, due to error or not updating state properly), the router will keep returning "resolve_category", then after the category is created, you go to "resolve_budget", and finally back to "insert_expense". If insert_expense_node yields "resolve_category" again (by returning such an "action"), the loop continues forever for the same data.
-
-    To fix this, make sure:
-      - "current_index" advances only after an expense was fully/actually inserted
-      - After processing the last expense, you "end"
-      - When you return for the next expense, you always pick up the correct (next) item, and don't reset the "action" to "resolve_category" unnecessarily
-
-    Here's a proper implementation:
-    """
+    print(f"CURRENT STATE INSERT NODE: {state}")
     result = await create_expense.ainvoke(
         {
             "description": state["description"],
@@ -151,12 +136,23 @@ async def insert_expense_node(state: ExpenseState):
         }
     )
 
+    return {"response": result, "action": "deduct_budget"}
+
+
+async def deduct_budget_node(state: ExpenseState):
+    await deduct_budget_amount.ainvoke(
+        {
+            "budget_id": state["budget_id"],
+            "amount": state["amount"],
+        }
+    )
+
     current_index = state.get("current_index", 0)
     parsed_expenses = state.get("parsed_expenses", None)
 
     if parsed_expenses is None or not isinstance(parsed_expenses, list):
         # Defensive: No expenses to loop!
-        return {"response": result, "action": "end"}
+        return {"action": "end"}
 
     next_index = current_index + 1
     if next_index < len(parsed_expenses):
@@ -176,7 +172,21 @@ async def insert_expense_node(state: ExpenseState):
         }
 
     # All done, finish
-    return {"response": result, "action": "end"}
+    return {"action": "end"}
+
+
+async def ask_confirmation(state: ExpenseState):
+    # Construct a confirmation message
+    msg = (
+        f"Please confirm the expense details:\n"
+        f"- Description: {state['description']}\n"
+        f"- Amount: {state['amount']}\n"
+        f"- Category: {state['category_name']}\n"
+        f"- Budget: {state['budget_name']}\n"
+        f"- Date: {state['date_spent']}\n\n"
+        f"Do you want to proceed? (yes/no)"
+    )
+    return {"response": msg, "action": "insert_expense"}
 
 
 def router(state: ExpenseState):

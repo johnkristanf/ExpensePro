@@ -7,6 +7,9 @@ from agents.expense.nodes import (
     create_category_node,
     resolve_budget,
     insert_expense_node,
+    deduct_budget_node,
+    deduct_budget_node,
+    ask_confirmation,
     router,
 )
 
@@ -19,6 +22,9 @@ nodes = {
     "create_category": create_category_node,
     "resolve_budget": resolve_budget,
     "insert_expense": insert_expense_node,
+    "insert_expense": insert_expense_node,
+    "deduct_budget": deduct_budget_node,
+    "ask_confirmation": ask_confirmation,
 }
 
 for name, node_func in nodes.items():
@@ -37,11 +43,13 @@ builder.add_conditional_edges(
 )
 builder.add_edge("create_category", "resolve_budget")
 builder.add_conditional_edges(
-    "resolve_budget", router, {"insert_expense": "insert_expense", "end": END}
+    "resolve_budget", router, {"ask_confirmation": "ask_confirmation", "end": END}
 )
+builder.add_edge("ask_confirmation", "insert_expense")
+builder.add_edge("insert_expense", "deduct_budget")
 builder.add_conditional_edges(
-    "insert_expense", router, {"resolve_category": "resolve_category", "end": END}
+    "deduct_budget", router, {"resolve_category": "resolve_category", "end": END}
 )
 
 memory = MemorySaver()
-graph = builder.compile(checkpointer=memory)
+graph = builder.compile(checkpointer=memory, interrupt_before=["insert_expense"])

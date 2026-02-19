@@ -11,6 +11,7 @@ const api = axios.create({
 }) 
 
 
+
 export const web = axios.create({
     baseURL: process.env.NEXT_PUBLIC_WEB_SERVER_URL,
     withCredentials: true,
@@ -20,5 +21,15 @@ export const web = axios.create({
         'Content-Type': 'application/json',
     },
 }) 
+
+export const autopilot = axios.create({
+    baseURL: process.env.NEXT_PUBLIC_AUTOPILOT_URL,
+    withCredentials: true,
+    withXSRFToken: true,
+    headers: {
+        Accept: 'application/json',
+        'Content-Type': 'application/json',
+    },
+})
 
 export default api

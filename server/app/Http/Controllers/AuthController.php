@@ -19,7 +19,7 @@ class AuthController extends Controller
                 'success' => false,
                 'message' => 'Login Failed',
                 'error_code' => 'AUTHENTICATION_FAILED',
-            ]);
+            ], 401);
         }
 
         $request->session()->regenerate();

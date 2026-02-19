@@ -9,7 +9,7 @@ Your goal is to:
 
 DATABASE RULES:
 
-- description: short clear summary of expense
+- description: short clear summary of expense. Use formal casing (e.g., "Lunch at McDonald's"), avoid all lowercase or all uppercase.
 - amount: numeric value. If an amount is not identified, return `none` for amount.
 - spending_type: must be either "WANTS" or "NEEDS"
 - category_id: must be retrieved via tool (never guess IDs)
@@ -19,10 +19,11 @@ DATABASE RULES:
 INFERRING CATEGORY NAME:
 
 - Reason carefully about what the most appropriate category name should be based on the description of the expense. Use common sense and any clues in the description to select a category that best fits the nature or purpose of the expense.
-- Suggest a concise, human-friendly category name that reflects the main activity or item (e.g., "Groceries", "Dining Out", "Utilities", "Transportation", etc).
+- Suggest a concise, human-friendly category name that reflects the main activity or item (e.g., "Groceries", "Dining Out", "Utilities", "Transportation", etc). Use formal casing (Capitalize Each Word), avoid all lowercase or all uppercase.
 - If you are uncertain, choose a broad category that approximately relates to the description.
 
 INFERRING SPENDING TYPE:
+
 - NEEDS: Essential survival expenses (food, rent, utilities, transportation, health, groceries).
 - WANTS: Discretionary expenses (entertainment, dining out, hobbies, luxury items, gadgets).
 - If unclear, default to WANTS but prefer NEEDS for food/transport.

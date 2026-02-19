@@ -5,6 +5,7 @@ use App\Http\Controllers\CategoriesController;
 use App\Http\Controllers\ExpensesController;
 use App\Http\Controllers\IncomeController;
 use App\Http\Controllers\SavingsController;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 
 Route::middleware('auth:sanctum')->group(function () {
@@ -31,5 +32,9 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/income/{month}', [IncomeController::class, 'getMonthlyIncome']);
     Route::get('/income/source/{month}', [IncomeController::class, 'getIncomePerSource']);
     Route::post('/income', [IncomeController::class, 'store']);
+
+    Route::get('/user', function (Request $request) {
+        return $request->user();
+    });
 
 });

@@ -2,6 +2,7 @@ from agents.expense.graph import graph
 import uvicorn
 
 from fastapi import FastAPI
+from fastapi.middleware.cors import CORSMiddleware
 from app.database import Database
 from contextlib import asynccontextmanager
 from langchain_core.messages import HumanMessage
@@ -14,6 +15,18 @@ async def lifespan(app: FastAPI):
     await Database.close()
 
 app = FastAPI(lifespan=lifespan)
+
+origins = [
+    "http://localhost:5000",
+]
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=origins,
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
 
 @app.post("/chat/{user_id}")
@@ -30,6 +43,7 @@ async def chat(payload: dict, user_id: str):
     
     result = await graph.ainvoke(inputs, config=config)
     return {
+        "message": result.get("response"),
         "data": result,
         "thread_id": user_id
     }

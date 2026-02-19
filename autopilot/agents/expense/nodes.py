@@ -151,7 +151,6 @@ async def insert_expense_node(state: ExpenseState):
         }
     )
 
-    # Retrieve and increment index after successful insertion
     current_index = state.get("current_index", 0)
     parsed_expenses = state.get("parsed_expenses", None)
 

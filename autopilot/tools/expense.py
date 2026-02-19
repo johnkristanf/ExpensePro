@@ -59,6 +59,6 @@ async def create_expense(
                 int(category_id), 
                 int(budget_id)
             )
-            return f"Successfully created expense with ID: {expense_id}"
+            return f"Expense recorded successfully"
     except Exception as e:
-        return f"Error creating expense: {str(e)}"
+        return f"Error recording expense"

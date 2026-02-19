@@ -3,8 +3,12 @@
 import PageTitle from '@/components/page-title'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
-import { Bot, Send } from 'lucide-react'
+import { useUser } from '@/hooks/use-user'
+import { sendMessage } from '@/lib/api/autopilot/post'
+import { useMutation } from '@tanstack/react-query'
+import { Bot, Send, User } from 'lucide-react'
 import { useState } from 'react'
+import { toast } from 'sonner'
 
 interface Message {
     id: number
@@ -14,14 +18,44 @@ interface Message {
 }
 
 const EXAMPLE_PROMPTS = [
-    "Spent $50 on groceries at Walmart",
-    "Paid $25 for lunch at McDonald's",
-    "Today I spent $30 on coffee at Starbucks, $45 on dinner at Olive Garden, and $20 on gas at Shell"
+    "Today I spent 20 pesos for Morning Bread using Discretionary Budget",
+    "Today I spent 50 pesos for Transportation to Tagum, and 15 pesos for Pedicab Transportation to Terminal using Transportation Budget"
 ]
 
 export default function AutopilotPage() {
+    const { data: user } = useUser()
     const [messages, setMessages] = useState<Message[]>([])
     const [inputValue, setInputValue] = useState('')
+
+    const mutation = useMutation({
+        mutationFn: async (message: string) => {
+            if (!user?.id) throw new Error("User not found")
+            return await sendMessage(user.id, message)
+        },
+        onSuccess: (data) => {
+            console.log("data: ", data);
+            
+            // data.data is the string response from the bot based on the python code
+            const botResponse: Message = {
+                id: messages.length + 2,
+                text: data.message,
+                sender: 'bot',
+                timestamp: new Date(),
+            }
+            setMessages((prev) => [...prev, botResponse])
+        },
+        onError: (error) => {
+            console.error(error)
+            toast.error("Failed to process message")
+             const errorResponse: Message = {
+                id: messages.length + 2,
+                text: "Sorry, I encountered an error processing your request.",
+                sender: 'bot',
+                timestamp: new Date(),
+            }
+            setMessages((prev) => [...prev, errorResponse])
+        }
+    })
 
     const handleSendMessage = () => {
         if (!inputValue.trim()) return
@@ -33,19 +67,10 @@ export default function AutopilotPage() {
             timestamp: new Date(),
         }
 
-        setMessages([...messages, newMessage])
+        setMessages((prev) => [...prev, newMessage])
         setInputValue('')
-
-        // Simulate bot response
-        setTimeout(() => {
-            const botResponse: Message = {
-                id: messages.length + 2,
-                text: "I'm processing your expense request. This feature is coming soon!",
-                sender: 'bot',
-                timestamp: new Date(),
-            }
-            setMessages((prev) => [...prev, botResponse])
-        }, 1000)
+        
+        mutation.mutate(newMessage.text)
     }
 
     const handleKeyPress = (e: React.KeyboardEvent<HTMLInputElement>) => {
@@ -113,7 +138,7 @@ export default function AutopilotPage() {
                                             : 'bg-muted'
                                             }`}
                                     >
-                                        <p className="text-sm">{message.text}</p>
+                                        <p className="text-sm whitespace-pre-wrap">{message.text}</p>
                                         <p className="text-xs opacity-70 mt-1">
                                             {message.timestamp.toLocaleTimeString([], {
                                                 hour: '2-digit',
@@ -123,6 +148,17 @@ export default function AutopilotPage() {
                                     </div>
                                 </div>
                             ))}
+                            {mutation.isPending && (
+                                <div className="flex justify-start">
+                                    <div className="bg-muted max-w-[70%] rounded-lg px-4 py-2">
+                                        <div className="flex gap-1 items-center">
+                                            <div className="w-2 h-2 bg-primary rounded-full animate-bounce [animation-delay:-0.3s]"></div>
+                                            <div className="w-2 h-2 bg-primary rounded-full animate-bounce [animation-delay:-0.15s]"></div>
+                                            <div className="w-2 h-2 bg-primary rounded-full animate-bounce"></div>
+                                        </div>
+                                    </div>
+                                </div>
+                            )}
                         </div>
                     )}
                 </div>
@@ -136,8 +172,14 @@ export default function AutopilotPage() {
                             onChange={(e) => setInputValue(e.target.value)}
                             onKeyPress={handleKeyPress}
                             className="flex-1"
+                            disabled={mutation.isPending}
                         />
-                        <Button onClick={handleSendMessage} size="icon" className="cursor-pointer">
+                        <Button 
+                            onClick={handleSendMessage} 
+                            size="icon" 
+                            className="cursor-pointer"
+                            disabled={!inputValue.trim() || mutation.isPending}
+                        >
                             <Send className="h-4 w-4" />
                         </Button>
                     </div>

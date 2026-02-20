@@ -3,6 +3,7 @@ from langchain_core.messages import BaseMessage
 from langgraph.graph.message import add_messages
 from pydantic import BaseModel
 
+
 class ExtractExpense(BaseModel):
     description: Optional[str]
     amount: Optional[float]
@@ -11,15 +12,16 @@ class ExtractExpense(BaseModel):
     budget_name: Optional[str]
     date_spent: Optional[str]
 
+
 class ExpensesListExtract(BaseModel):
     parsed_expenses: List[ExtractExpense]
+
 
 class ExpenseState(TypedDict, total=False):
     messages: Annotated[List[BaseMessage], add_messages]
     user_input: str
     user_id: int  # important for multi-user SaaS
-    
-    
+
     description: Optional[str]
     amount: Optional[float]
     spending_type: Optional[str]
@@ -34,6 +36,11 @@ class ExpenseState(TypedDict, total=False):
     budget_id: Optional[int]
 
     action: Optional[str]
+
+    budget_clarification_attempts: int
+
+    budget_total_amount: Optional[float]
+    budget_period_date: Optional[str]
 
     response: Optional[str]
     error: Optional[str]

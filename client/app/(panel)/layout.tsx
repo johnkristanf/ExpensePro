@@ -1,5 +1,5 @@
 import { AppSidebar } from '@/components/app-sidebar'
-import LogoutButton from '@/components/logout-button'
+import { SidebarUserAvatar } from '@/components/sidebar-user-avatar'
 import { Separator } from '@/components/ui/separator'
 import { SidebarInset, SidebarProvider, SidebarTrigger } from '@/components/ui/sidebar'
 import React from 'react'
@@ -22,7 +22,7 @@ export default function PanelLayout({
                         />
                     </div>
 
-                    <LogoutButton />
+                    <SidebarUserAvatar />
                 </header>
 
                 <div className="flex flex-1 flex-col gap-4 p-4">{children}</div>

@@ -2,13 +2,14 @@
 
 import PageTitle from '@/components/page-title'
 import { Button } from '@/components/ui/button'
-import { Input } from '@/components/ui/input'
+import { Textarea } from '@/components/ui/textarea'
 import { useUser } from '@/hooks/use-user'
 import { sendMessage } from '@/lib/api/autopilot/post'
 import { useMutation } from '@tanstack/react-query'
 import { Bot, Send, User } from 'lucide-react'
 import { useState } from 'react'
 import { toast } from 'sonner'
+import { PromptDrawer } from '@/components/prompt-drawer'
 
 interface Message {
     id: number
@@ -19,7 +20,7 @@ interface Message {
 
 const EXAMPLE_PROMPTS = [
     "Today I spent 20 pesos for Morning Bread using Discretionary Budget",
-    "Today I spent 50 pesos for Transportation to Tagum, and 15 pesos for Pedicab Transportation to Terminal using Transportation Budget"
+    "Today I spent 50 pesos for bus fare to Tagum - 15 pesos for pedicab fare to Terminal using Transportation Budget",
 ]
 
 export default function AutopilotPage() {
@@ -34,7 +35,7 @@ export default function AutopilotPage() {
         },
         onSuccess: (data) => {
             console.log("data: ", data);
-            
+
             // data.data is the string response from the bot based on the python code
             const botResponse: Message = {
                 id: messages.length + 2,
@@ -47,7 +48,7 @@ export default function AutopilotPage() {
         onError: (error) => {
             console.error(error)
             toast.error("Failed to process message")
-             const errorResponse: Message = {
+            const errorResponse: Message = {
                 id: messages.length + 2,
                 text: "Sorry, I encountered an error processing your request.",
                 sender: 'bot',
@@ -69,24 +70,37 @@ export default function AutopilotPage() {
 
         setMessages((prev) => [...prev, newMessage])
         setInputValue('')
-        
+
         mutation.mutate(newMessage.text)
     }
 
-    const handleKeyPress = (e: React.KeyboardEvent<HTMLInputElement>) => {
-        if (e.key === 'Enter') {
+    const handleKeyPress = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
+        if (e.key === 'Enter' && !e.shiftKey) {
+            e.preventDefault()
             handleSendMessage()
         }
     }
 
+    const handleSelectPrompt = (text: string) => {
+        setInputValue((prev) => {
+            const trimmed = prev.trim()
+            if (!trimmed) return `- ${text}`
+            return `${trimmed}\n- ${text}`
+        })
+        toast.success("Prompt added")
+    }
+
     return (
         <div className="container mx-auto py-5 h-[calc(100vh-2rem)] flex flex-col">
-            <PageTitle title="Autopilot" />
+            <div className="flex items-center justify-between">
+                <PageTitle title="Autopilot" />
+                <PromptDrawer onSelectPrompt={handleSelectPrompt} />
+            </div>
 
             <div className="mb-4">
                 <p className="text-muted-foreground">
                     Describe your expense in natural language to record it automatically with AI.
-                </p>    
+                </p>
             </div>
 
             {/* Chat Container */}
@@ -114,7 +128,10 @@ export default function AutopilotPage() {
                                     {EXAMPLE_PROMPTS.map((prompt, index) => (
                                         <button
                                             key={index}
-                                            onClick={() => setInputValue(prompt)}
+                                            onClick={() => {
+                                                const formatted = prompt.split(' - ').map(p => `- ${p.trim()}`).join('\n')
+                                                setInputValue(formatted)
+                                            }}
                                             className="text-left px-4 py-3 rounded-lg border bg-background hover:bg-muted transition-colors cursor-pointer"
                                         >
                                             <p className="text-sm">{prompt}</p>
@@ -126,9 +143,9 @@ export default function AutopilotPage() {
                     ) : (
                         // Messages List
                         <div className="space-y-4">
-                            {messages.map((message) => (
+                            {messages.map((message, index) => (
                                 <div
-                                    key={message.id}
+                                    key={index}
                                     className={`flex ${message.sender === 'user' ? 'justify-end' : 'justify-start'
                                         }`}
                                 >
@@ -166,17 +183,17 @@ export default function AutopilotPage() {
                 {/* Input Area */}
                 <div className="border-t p-4 bg-background">
                     <div className="flex gap-2">
-                        <Input
+                        <Textarea
                             placeholder="Describe your expense (e.g., 'Spent $50 on groceries at Walmart')"
                             value={inputValue}
                             onChange={(e) => setInputValue(e.target.value)}
-                            onKeyPress={handleKeyPress}
-                            className="flex-1"
+                            onKeyDown={handleKeyPress}
+                            className="flex-1 min-h-[50px] max-h-[200px]"
                             disabled={mutation.isPending}
                         />
-                        <Button 
-                            onClick={handleSendMessage} 
-                            size="icon" 
+                        <Button
+                            onClick={handleSendMessage}
+                            size="icon"
                             className="cursor-pointer"
                             disabled={!inputValue.trim() || mutation.isPending}
                         >

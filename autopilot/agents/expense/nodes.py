@@ -1,4 +1,4 @@
-from langchain_core.messages import SystemMessage
+from langchain_core.messages import SystemMessage, RemoveMessage, RemoveMessage
 from datetime import datetime
 import re
 
@@ -344,8 +344,11 @@ async def deduct_budget_node(state: ExpenseState):
             "current_index": next_index,
             "action": "resolve_category",
         }
-
+ 
     # All done, finish
-    return {"action": "end"}
+    messages = state.get("messages", [])
+    removals = [RemoveMessage(id=m.id) for m in messages if hasattr(m, 'id')]
+
+    return {"action": "end", "messages": removals}
 
 

@@ -45,4 +45,8 @@ class User extends Authenticatable
             'password' => 'hashed',
         ];
     }
+    public function expensePrompts()
+    {
+        return $this->hasMany(ExpensePrompt::class);
+    }
 }

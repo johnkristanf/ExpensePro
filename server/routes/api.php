@@ -3,6 +3,7 @@
 use App\Http\Controllers\BudgetsController;
 use App\Http\Controllers\CategoriesController;
 use App\Http\Controllers\ExpensesController;
+use App\Http\Controllers\ExpensePromptController;
 use App\Http\Controllers\IncomeController;
 use App\Http\Controllers\SavingsController;
 use Illuminate\Http\Request;
@@ -36,5 +37,10 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/user', function (Request $request) {
         return $request->user();
     });
+
+    Route::get('/expense-prompts', [ExpensePromptController::class, 'index']);
+    Route::post('/expense-prompts', [ExpensePromptController::class, 'store']);
+    Route::patch('/expense-prompts/{id}', [ExpensePromptController::class, 'update']);
+    Route::delete('/expense-prompts/{id}', [ExpensePromptController::class, 'destroy']);
 
 });

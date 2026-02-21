@@ -1,16 +1,13 @@
-from tools.budget import get_budgets_by_name
+from agents.expense.state import ExpenseAction
 from agents.expense.models import load_expense_parser_model
 from agents.expense.graph import graph
 import uvicorn
-import re
 
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from app.database import Database
 from contextlib import asynccontextmanager
 from langchain_core.messages import HumanMessage
-
-from app.utils import classify_user_input
 
 
 @asynccontextmanager
@@ -35,132 +32,52 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+from agents.expense.handlers import (
+    handle_budget_clarification,
+    handle_create_budget_confirm,
+    handle_budget_details,
+    handle_insufficient_funds_response,
+    handle_add_funds,
+    handle_deduct_budget,
+)
+
 
 @app.post("/chat/{user_id}")
 async def chat(payload: dict, user_id: str):
     config = {"configurable": {"thread_id": user_id}}
     user_input = payload["user_input"]
 
-    # Check if the graph is currently interrupted
     message_state = await graph.aget_state(config)
+    action = message_state.values.get("action") if message_state.values else None
 
-    if (
-        message_state.values
-        and message_state.values.get("action") == "wait_budget_clarification"
-    ):
-        graph.update_state(
-            config, {"budget_name": user_input.strip(), "action": "resolve_budget"}
-        )
-        result = await graph.ainvoke(None, config=config)
-    elif (
-        message_state.values
-        and message_state.values.get("action") == "wait_create_budget_confirm"
-    ):
-        is_approval, is_denial = classify_user_input(user_input)
+    # Handler mapping for specific actions
+    action_handlers = {
+        ExpenseAction.WAIT_BUDGET_CLARIFICATION: handle_budget_clarification,
+        ExpenseAction.WAIT_CREATE_BUDGET_CONFIRM: handle_create_budget_confirm,
+        ExpenseAction.WAIT_BUDGET_DETAILS: handle_budget_details,
+        ExpenseAction.WAIT_INSUFFICIENT_FUNDS_RESPONSE: handle_insufficient_funds_response,
+        ExpenseAction.WAIT_ADD_FUNDS: handle_add_funds,
+    }
 
-        if is_approval:
-            graph.update_state(
-                config,
-                {
-                    "action": "ask_budget_details",
-                },
-            )
-            result = await graph.ainvoke(None, config=config)
-        elif is_denial:
-            return {
-                "message": "Budget creation cancelled. Please add your expense again with an existing budget.",
-                "data": None,
-                "thread_id": user_id,
-            }
-        else:
-            return {
-                "message": "I didn't understand. Would you like to create the budget instead? (yes/no)",
-                "data": None,
-                "thread_id": user_id,
-            }
-    elif (
-        message_state.values
-        and message_state.values.get("action") == "wait_budget_details"
-    ):
-        graph.update_state(
-            config,
-            {
-                "messages": [HumanMessage(content=user_input)],
-                "action": "parse_budget_details",
-            },
-        )
-        result = await graph.ainvoke(None, config=config)
-
-    elif (
-        message_state.values
-        and message_state.values.get("action") == "wait_insufficient_funds_response"
-    ):  
-        is_approval, _ = classify_user_input(user_input)
-
-        if is_approval:
-            graph.update_state(
-                config,
-                {
-                    "action": "ask_add_funds",
-                }, 
-            )
-
-            result = await graph.ainvoke(None, config=config)
-        else:
-            result = await get_budgets_by_name.ainvoke({"name_query": user_input.strip()})
-
-            if result.get("name"):
-                new_budget_name = result.get("name")
-                graph.update_state(
-                    config,
-                    {
-                        "budget_name": new_budget_name,
-                        "action": "resolve_budget",
-                    },
-                )
-                result = await graph.ainvoke(None, config=config)
-            else:
-                return {
-                    "message": f"I couldn't find a budget matching '{user_input}'. Would you like to increase the funds of the current budget or provide another budget name?",
-                    "data": None,
-                    "thread_id": user_id,
-                }
-    elif (
-        message_state.values and message_state.values.get("action") == "wait_add_funds"
-    ):
-        graph.update_state(
-            config,
-            {
-                "messages": [HumanMessage(content=user_input)],
-                "action": "parse_add_funds",
-            },
-        )
-        result = await graph.ainvoke(None, config=config)
+    if action in action_handlers:
+        result = await action_handlers[action](config, user_input)
     elif message_state.next and "deduct_budget" in message_state.next:
-        is_approval, is_denial = classify_user_input(user_input)
-
-        if is_approval:
-            result = await graph.ainvoke(None, config=config)
-        elif is_denial:
-            graph.update_state(config, {"action": "cancel"})
-            result = await graph.ainvoke(None, config=config)
-        else:
-            return {
-                "message": "I didn't understand. Do you want to proceed with the expense? (yes/no)",
-                "data": None,
-                "thread_id": user_id,
-            }
+        result = await handle_deduct_budget(config, user_input)
     else:
-        # Fresh query
+        # Fresh query or unhandled state
         inputs = {"messages": [HumanMessage(content=user_input)], "current_index": 0}
         result = await graph.ainvoke(inputs, config=config)
 
+    # Normalize response if a handler returned a simple dict
+    response = result.get("response") if isinstance(result, dict) else None
+
     return {
-        "message": result.get("response"),
+        "message": response,
         "data": result,
         "thread_id": user_id,
         "message_state": message_state,
-    } 
+    }
+ 
 
 
 @app.get("/health")

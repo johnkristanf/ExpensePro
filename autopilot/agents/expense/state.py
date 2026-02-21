@@ -46,3 +46,11 @@ class ExpenseState(TypedDict, total=False):
 
     response: Optional[str]
     error: Optional[str]
+
+
+class ExpenseAction:
+    WAIT_BUDGET_CLARIFICATION = "wait_budget_clarification"
+    WAIT_CREATE_BUDGET_CONFIRM = "wait_create_budget_confirm"
+    WAIT_BUDGET_DETAILS = "wait_budget_details"
+    WAIT_ADD_FUNDS = "wait_add_funds"
+    WAIT_INSUFFICIENT_FUNDS_RESPONSE = "wait_insufficient_funds_response"

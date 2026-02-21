@@ -13,5 +13,7 @@ def start_router(state: ExpenseState):
         "ask_budget_details": "ask_budget_details",
         "parse_budget_details": "parse_budget_details",
         "resolve_budget": "resolve_budget",
+        "ask_add_funds": "ask_add_funds",
+        "parse_add_funds": "parse_add_funds",
     }
     return routes.get(action, "parse_input")

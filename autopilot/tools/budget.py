@@ -4,7 +4,30 @@ from app.database import Database
 
 
 @tool
-async def get_budgets_by_name(name_query: str) -> str:
+async def get_all_budgets() -> list:
+    """
+    Fetches all available budgets from the database.
+    """
+    query = """
+    SELECT id, name, current_amount, total_amount, budget_period 
+    FROM public.budgets 
+    ORDER BY id;
+    """
+    try:
+        async with Database.get_async_session() as conn:
+            rows = await conn.fetch(query)
+
+            if not rows:
+                return []
+
+            return [dict(row) for row in rows]
+
+    except Exception as e:
+        return f"Error fetching budgets: {str(e)}"
+
+
+@tool
+async def get_budgets_by_name(name_query: str) -> dict:
     """
     Searches for budgets by name using a case-insensitive partial match.
 
@@ -22,18 +45,12 @@ async def get_budgets_by_name(name_query: str) -> str:
 
     try:
         async with Database.get_async_session() as conn:
-            rows = await conn.fetch(query, search_param)
+            row = await conn.fetchrow(query, search_param)
 
-            if not rows:
+            if not row:
                 return f"No budgets found matching '{name_query}'."
 
-            results = []
-            for row in rows:
-                results.append(dict(row))
-
-            # Format results for readability
-            formatted_res = "\n".join([str(r) for r in results])
-            return f"Found {len(results)} budget(s):\n{formatted_res}"
+            return dict(row)
 
     except Exception as e:
         return f"Error fetching budgets: {str(e)}"
@@ -84,7 +101,9 @@ async def deduct_budget_amount(budget_id: int, amount: float) -> str:
         amount: The amount to deduct from the current_amount.
     """
 
-    query = """
+    fetch_query = "SELECT current_amount, name FROM public.budgets WHERE id = $1"
+    
+    update_query = """
     UPDATE public.budgets
     SET current_amount = current_amount - $1,
         updated_at = NOW()
@@ -92,16 +111,50 @@ async def deduct_budget_amount(budget_id: int, amount: float) -> str:
     RETURNING current_amount;
     """
 
-    print(f"BUDGET ID SA TOOL: {budget_id}")
-    print(f"BUDGET AMOUNT SA TOOL: {amount}")
+    try:
+        async with Database.get_async_session() as conn:
+            # Fetch current amount first
+            row = await conn.fetchrow(fetch_query, int(budget_id))
+            if not row:
+                return f"Error: Budget with ID {budget_id} not found."
+            
+            if float(amount) > float(row['current_amount']):
+                return f"Insufficient funds in budget '{row['name']}'."
+
+            new_amount = await conn.fetchval(update_query, float(amount), int(budget_id))
+            return f"Budget '{row['name']}' updated successfully. New current amount: {new_amount}"
+
+    except Exception as e:
+        return f"Error updating budget: {str(e)}"
+
+@tool
+async def add_budget_amount(budget_id: int, amount: float) -> str:
+    """
+    Adds the specified amount to the budget's current_amount.
+
+    Args:
+        budget_id: The ID of the budget to update.
+        amount: The amount to add to the current_amount.
+    """
+    fetch_query = "SELECT current_amount, name FROM public.budgets WHERE id = $1"
+    
+    update_query = """
+    UPDATE public.budgets
+    SET current_amount = current_amount + $1,
+        updated_at = NOW()
+    WHERE id = $2
+    RETURNING current_amount;
+    """
 
     try:
         async with Database.get_async_session() as conn:
-            new_amount = await conn.fetchval(query, float(amount), int(budget_id))
-            if new_amount is None:
+            # Fetch current amount first to verify budget existence
+            row = await conn.fetchrow(fetch_query, int(budget_id))
+            if not row:
                 return f"Error: Budget with ID {budget_id} not found."
-
-            return f"Budget updated successfully. New current amount: {new_amount}"
+            
+            new_amount = await conn.fetchval(update_query, float(amount), int(budget_id))
+            return f"Successfully added {amount} to budget '{row['name']}'. New current amount: {new_amount}"
 
     except Exception as e:
         return f"Error updating budget: {str(e)}"

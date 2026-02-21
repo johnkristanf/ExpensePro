@@ -13,6 +13,10 @@ from agents.expense.nodes import (
     insert_expense_node,
     deduct_budget_node,
     ask_confirmation,
+    insufficient_budget_funds,
+    ask_add_funds,
+    parse_add_funds,
+    add_funds_node,
 )
 from agents.expense.routers import start_router, action_router
 
@@ -31,6 +35,10 @@ nodes = {
     "insert_expense": insert_expense_node,
     "deduct_budget": deduct_budget_node,
     "ask_confirmation": ask_confirmation,
+    "insufficient_funds": insufficient_budget_funds,
+    "ask_add_funds": ask_add_funds,
+    "parse_add_funds": parse_add_funds,
+    "add_funds": add_funds_node,
 }
 
 for name, node_func in nodes.items():
@@ -45,6 +53,8 @@ builder.add_conditional_edges(
         "ask_budget_details": "ask_budget_details",
         "parse_budget_details": "parse_budget_details",
         "resolve_budget": "resolve_budget",
+        "ask_add_funds": "ask_add_funds",
+        "parse_add_funds": "parse_add_funds",
     },
 )
 
@@ -63,9 +73,9 @@ builder.add_conditional_edges(
     {
         "ask_confirmation": "ask_confirmation",
         "clarify_budget": "clarify_budget",
-        "end": END,
         "ask_budget_details": "ask_budget_details",
         "parse_budget_details": "parse_budget_details",
+        "end": END,
     },
 )
 builder.add_conditional_edges(
@@ -73,8 +83,8 @@ builder.add_conditional_edges(
     action_router,
     {
         "wait_budget_clarification": END,
-        "resolve_budget": "resolve_budget",
         "wait_create_budget_confirm": END,
+        "resolve_budget": "resolve_budget",
         "ask_budget_details": "ask_budget_details",
         "parse_budget_details": "parse_budget_details",
     },
@@ -84,7 +94,7 @@ builder.add_conditional_edges(
     action_router,
     {
         "wait_budget_details": END,
-        "parse_budget_details": "parse_budget_details",  # Resume: user provided budget details
+        "parse_budget_details": "parse_budget_details",
     },
 )
 builder.add_edge("parse_budget_details", "create_budget")
@@ -96,16 +106,52 @@ builder.add_conditional_edges(
         "wait_budget_details": "ask_budget_details",
         "parse_budget_details": "parse_budget_details",
         "end": END,
+    }, 
+)
+builder.add_edge("ask_confirmation", "deduct_budget")
+builder.add_conditional_edges(
+    "deduct_budget",
+    action_router,
+    {
+        "insert_expense": "insert_expense",
+        "insufficient_funds": "insufficient_funds",
+        "end": END,
     },
 )
-builder.add_edge("ask_confirmation", "insert_expense")
-builder.add_edge("insert_expense", "deduct_budget")
+
 builder.add_conditional_edges(
-    "deduct_budget", action_router, {"resolve_category": "resolve_category", "end": END}
+    "insert_expense",
+    action_router,
+    {
+        "resolve_category": "resolve_category",
+        "end": END,
+    },
 )
+
+builder.add_conditional_edges(
+    "insufficient_funds",
+    action_router,
+    {
+        "wait_insufficient_funds_response": END,
+        "ask_add_funds": "ask_add_funds",
+        "resolve_budget": "resolve_budget",
+    },
+)
+
+builder.add_conditional_edges(
+    "ask_add_funds",
+    action_router,
+    {
+        "wait_add_funds": END,
+        "parse_add_funds": "parse_add_funds",
+    },
+)
+
+builder.add_edge("parse_add_funds", "add_funds")
+builder.add_edge("add_funds", "ask_confirmation")
 
 memory = MemorySaver()
 graph = builder.compile(
     checkpointer=memory,
-    interrupt_before=["insert_expense", "ask_budget_details"],
+    interrupt_before=["deduct_budget", "ask_budget_details"],
 )

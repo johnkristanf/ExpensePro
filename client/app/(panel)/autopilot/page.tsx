@@ -10,6 +10,7 @@ import { Bot, Send, User } from 'lucide-react'
 import { useState } from 'react'
 import { toast } from 'sonner'
 import { PromptDrawer } from '@/components/prompt-drawer'
+import { Markdown } from '@/components/markdown'
 
 interface Message {
     id: number
@@ -155,7 +156,7 @@ export default function AutopilotPage() {
                                             : 'bg-muted'
                                             }`}
                                     >
-                                        <p className="text-sm whitespace-pre-wrap">{message.text}</p>
+                                        <Markdown content={message.text} />
                                         <p className="text-xs opacity-70 mt-1">
                                             {message.timestamp.toLocaleTimeString([], {
                                                 hour: '2-digit',

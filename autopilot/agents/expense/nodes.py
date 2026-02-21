@@ -1,14 +1,15 @@
-from langchain_core.messages import SystemMessage, RemoveMessage, RemoveMessage
+from agents.expense.models import invoke_table_creator_model
+from langchain_core.messages import SystemMessage, HumanMessage, RemoveMessage
 from datetime import datetime
 import re
 
 from tools.expense import create_expense
-from tools.budget import deduct_budget_amount
-from tools.budget import get_budgets_by_name
+from tools.budget import deduct_budget_amount, add_budget_amount
+from tools.budget import get_budgets_by_name, get_all_budgets
 from tools.budget import create_budget as create_budget_tool
 from tools.categories import create_category, get_categories_by_name
 
-from agents.expense.model import model_with_structured_output
+from agents.expense.models import model, load_expense_parser_model
 from agents.expense.state import ExpenseState
 
 
@@ -25,7 +26,7 @@ async def parse_input(state: ExpenseState):
 
     messages = [SystemMessage(content=system_prompt)] + state["messages"]
 
-    result = await model_with_structured_output.ainvoke(messages)
+    result = await load_expense_parser_model().ainvoke(messages)
 
     parsed_expenses = getattr(result, "parsed_expenses", None)
     if parsed_expenses is not None:
@@ -49,8 +50,6 @@ async def parse_input(state: ExpenseState):
     required_fields = [
         "description",
         "amount",
-        "category_name",
-        "budget_name",
         "date_spent",
     ]
     for field in required_fields:
@@ -98,7 +97,7 @@ async def create_category_node(state: ExpenseState):
     )
 
     match = re.search(r"ID: (\d+)", result)
-
+ 
     if match:
         return {"category_id": int(match.group(1)), "action": "resolve_budget"}
 
@@ -106,19 +105,20 @@ async def create_category_node(state: ExpenseState):
 
 
 async def resolve_budget(state: ExpenseState):
-    print(f"CURRENT STATE RESOLVE BUDGET NODE: {state}")
-
     result = await get_budgets_by_name.ainvoke({"name_query": state["budget_name"]})
-
-    print(f"RESULT RESOLVE BUDGET NODE: {result}")
-
+    print(f"result SA RESOLVE BUDGET: {result}")
     if "No budgets found" in result:
         return {"action": "clarify_budget"}
 
-    match = re.search(r"'id': (\d+)", result)
+    budget_id = result.get("id")
+    budget_name = result.get("name")
 
-    if match:
-        return {"budget_id": int(match.group(1)), "action": "ask_confirmation"}
+    if budget_id and budget_name:
+        return {
+            "budget_id": int(budget_id),
+            "budget_name": budget_name,
+            "action": "ask_confirmation",
+        }
 
     return {"error": "Failed to resolve budget.", "action": "end"}
 
@@ -127,9 +127,6 @@ async def resolve_budget(state: ExpenseState):
 async def clarify_budget(state: ExpenseState):
     budget_name = state.get("budget_name", "the specified budget")
     attempts = state.get("budget_clarification_attempts", 0) + 1
-    print(
-        f"CLARIFY_BUDGET NODE RUNNING - budget_name: {budget_name}, attempts: {attempts}"
-    )
 
     if attempts >= 3:
         msg = (
@@ -142,9 +139,14 @@ async def clarify_budget(state: ExpenseState):
             "budget_clarification_attempts": attempts,
         }
 
+    budgets_data = await get_all_budgets.ainvoke({})
+    table = await invoke_table_creator_model(budgets_data)
+
     msg = (
-        f"The budget '{budget_name}' was not found. "
-        f"Please check the spelling or ensure the budget exists. What is the correct budget name?"
+        f"The budget '{budget_name}' was not found. \n\n\n\n"
+        f"Here's a list of budgets you can use:\n"
+        f"{table}\n\n\n\n"
+        f"Just enter the correct budget name, so that I can proceed on recording your expense."
     )
     return {
         "response": msg,
@@ -169,7 +171,6 @@ async def ask_budget_details(state: ExpenseState):
 
 async def parse_budget_details(state: ExpenseState):
     """Parse user input to extract budget details."""
-    print(f"STATUS SA PARSE BUDGET: {state}")
     user_input = ""
     if state.get("messages"):
         last_message = state["messages"][-1]
@@ -281,7 +282,6 @@ async def create_budget_node(state: ExpenseState):
 
 
 async def ask_confirmation(state: ExpenseState):
-    # Construct a confirmation message
     msg = (
         f"Please confirm the expense details:\n"
         f"- Description: {state['description']}\n"
@@ -291,15 +291,50 @@ async def ask_confirmation(state: ExpenseState):
         f"- Date: {state['date_spent']}\n\n"
         f"Do you want to proceed? (yes/no)"
     )
-    return {"response": msg, "action": "insert_expense"}
+    return {"response": msg, "action": "deduct_budget"}
 
 
+async def deduct_budget_node(state: ExpenseState):
+    if state.get("action") == "cancel":
+        return {"response": "Expense insertion cancelled.", "action": "end"}
 
+    result = await deduct_budget_amount.ainvoke(
+        {
+            "budget_id": state["budget_id"],
+            "amount": state["amount"],
+        }
+    )
+
+    if "Insufficient funds" in result:
+        return {"action": "insufficient_funds"}
+
+    return {"action": "insert_expense"}
+
+
+async def insufficient_budget_funds(state: ExpenseState):
+    budget_name = state.get("budget_name", "the specified budget")
+    
+    # Fetch all budgets to display
+    budgets_data = await get_all_budgets.ainvoke({})
+
+    table = await invoke_table_creator_model(budgets_data)    
+
+    msg = (
+        f"The budget '{budget_name}' has insufficient funds.\n\n\n"
+        f"Would you like to increase the '{budget_name}' funds\n\n"
+        f"or \n\n"
+        f"Select other budget to use:\n"
+        f"{table}\n"
+        f"Just enter \"yes\", if you've opted to increase the budget's funds Or enter the budget name, if you wish to use other budget"
+    )
+    
+    return {"response": msg, "action": "wait_insufficient_funds_response"}
+
+ 
 async def insert_expense_node(state: ExpenseState):
     if state.get("action") == "cancel":
         return {"response": "Expense insertion cancelled.", "action": "end"}
 
-    print(f"CURRENT STATE INSERT NODE: {state}")
     result = await create_expense.ainvoke(
         {
             "description": state["description"],
@@ -311,22 +346,12 @@ async def insert_expense_node(state: ExpenseState):
         }
     )
 
-    return {"response": result, "action": "deduct_budget"}
-
-async def deduct_budget_node(state: ExpenseState):
-    await deduct_budget_amount.ainvoke(
-        {
-            "budget_id": state["budget_id"],
-            "amount": state["amount"],
-        }
-    )
-
     current_index = state.get("current_index", 0)
     parsed_expenses = state.get("parsed_expenses", None)
 
+    # Defensive: No expenses to loop!
     if parsed_expenses is None or not isinstance(parsed_expenses, list):
-        # Defensive: No expenses to loop!
-        return {"action": "end"}
+        return {"response": result, "action": "end"}
 
     next_index = current_index + 1
     if next_index < len(parsed_expenses):
@@ -334,6 +359,7 @@ async def deduct_budget_node(state: ExpenseState):
         expense_item = parsed_expenses[next_index]
 
         return {
+            "response": result,
             "description": getattr(expense_item, "description", None),
             "amount": getattr(expense_item, "amount", None),
             "spending_type": getattr(expense_item, "spending_type", None),
@@ -344,11 +370,63 @@ async def deduct_budget_node(state: ExpenseState):
             "current_index": next_index,
             "action": "resolve_category",
         }
- 
+
     # All done, finish
     messages = state.get("messages", [])
     removals = [RemoveMessage(id=m.id) for m in messages if hasattr(m, 'id')]
 
-    return {"action": "end", "messages": removals}
+    return {"response": result, "action": "end", "messages": removals}
 
 
+async def ask_add_funds(state: ExpenseState):
+    """Ask user for the amount to add to the budget."""
+    budget_name = state.get("budget_name", "the budget")
+    msg = f"How much would you like to add to the budget '{budget_name}'?"
+    return {"response": msg, "action": "wait_add_funds"}
+
+
+async def parse_add_funds(state: ExpenseState):
+    """Parse user input to extract the amount to add."""
+    user_input = ""
+    if state.get("messages"):
+        last_message = state["messages"][-1]
+        if hasattr(last_message, "content"):
+            user_input = last_message.content
+        else:
+            user_input = str(last_message)
+
+    # Extract amount (look for numbers)
+    amount = None
+    amount_match = re.search(r"(\d+(?:,\d{3})*(?:\.\d{2})?)", user_input)
+    if amount_match:
+        try:
+            amount_str = amount_match.group(1).replace(",", "")
+            amount = float(amount_str)
+        except ValueError:
+            pass
+
+    if amount is None:
+        return {
+            "response": "I couldn't understand the amount. Please enter a valid number.",
+            "action": "wait_add_funds",
+        }
+
+    return {
+        "add_budget_funds_amount": amount,
+        "action": "add_funds",
+    }
+
+
+async def add_funds_node(state: ExpenseState):
+    """Call the tool to add funds to the budget."""
+    budget_id = state.get("budget_id")
+    amount = state.get("add_budget_funds_amount")
+
+    result = await add_budget_amount.ainvoke(
+        {"budget_id": int(budget_id), "amount": float(amount)}
+    )
+    
+    return {
+        "response": f"{result}\n\nNow, let's proceed with your original request.",
+        "action": "ask_confirmation",
+    }

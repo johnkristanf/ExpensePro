@@ -42,5 +42,7 @@ class ExpenseState(TypedDict, total=False):
     budget_total_amount: Optional[float]
     budget_period_date: Optional[str]
 
+    add_budget_funds_amount: Optional[float]
+
     response: Optional[str]
     error: Optional[str]

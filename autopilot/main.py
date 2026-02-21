@@ -1,5 +1,8 @@
+from tools.budget import get_budgets_by_name
+from agents.expense.models import load_expense_parser_model
 from agents.expense.graph import graph
 import uvicorn
+import re
 
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
@@ -45,7 +48,6 @@ async def chat(payload: dict, user_id: str):
         message_state.values
         and message_state.values.get("action") == "wait_budget_clarification"
     ):
-        print("RESUMING FROM BUDGET CLARIFICATION...")
         graph.update_state(
             config, {"budget_name": user_input.strip(), "action": "resolve_budget"}
         )
@@ -54,9 +56,7 @@ async def chat(payload: dict, user_id: str):
         message_state.values
         and message_state.values.get("action") == "wait_create_budget_confirm"
     ):
-        print("HANDLING CREATE BUDGET CONFIRMATION...")
         is_approval, is_denial = classify_user_input(user_input)
-        print(is_approval, is_denial)
 
         if is_approval:
             graph.update_state(
@@ -82,7 +82,6 @@ async def chat(payload: dict, user_id: str):
         message_state.values
         and message_state.values.get("action") == "wait_budget_details"
     ):
-        print("HANDLING BUDGET DETAILS INPUT...")
         graph.update_state(
             config,
             {
@@ -91,9 +90,53 @@ async def chat(payload: dict, user_id: str):
             },
         )
         result = await graph.ainvoke(None, config=config)
-    elif message_state.next and "insert_expense" in message_state.next:
-        print("RESUMING FROM INTERRUPT...")
 
+    elif (
+        message_state.values
+        and message_state.values.get("action") == "wait_insufficient_funds_response"
+    ):  
+        is_approval, _ = classify_user_input(user_input)
+
+        if is_approval:
+            graph.update_state(
+                config,
+                {
+                    "action": "ask_add_funds",
+                }, 
+            )
+
+            result = await graph.ainvoke(None, config=config)
+        else:
+            result = await get_budgets_by_name.ainvoke({"name_query": user_input.strip()})
+
+            if result.get("name"):
+                new_budget_name = result.get("name")
+                graph.update_state(
+                    config,
+                    {
+                        "budget_name": new_budget_name,
+                        "action": "resolve_budget",
+                    },
+                )
+                result = await graph.ainvoke(None, config=config)
+            else:
+                return {
+                    "message": f"I couldn't find a budget matching '{user_input}'. Would you like to increase the funds of the current budget or provide another budget name?",
+                    "data": None,
+                    "thread_id": user_id,
+                }
+    elif (
+        message_state.values and message_state.values.get("action") == "wait_add_funds"
+    ):
+        graph.update_state(
+            config,
+            {
+                "messages": [HumanMessage(content=user_input)],
+                "action": "parse_add_funds",
+            },
+        )
+        result = await graph.ainvoke(None, config=config)
+    elif message_state.next and "deduct_budget" in message_state.next:
         is_approval, is_denial = classify_user_input(user_input)
 
         if is_approval:
@@ -117,11 +160,11 @@ async def chat(payload: dict, user_id: str):
         "data": result,
         "thread_id": user_id,
         "message_state": message_state,
-    }
+    } 
 
 
 @app.get("/health")
-async def health_check():
+async def health_check(): 
     return {"status": "ok"}
 
 

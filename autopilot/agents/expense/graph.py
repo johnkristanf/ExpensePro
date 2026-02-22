@@ -1,44 +1,34 @@
 from langgraph.graph import StateGraph, START, END
 from langgraph.checkpoint.memory import MemorySaver
 from agents.expense.state import ExpenseState
-from agents.expense.nodes import (
-    parse_input,
-    resolve_category,
-    create_category_node,
-    resolve_budget,
-    clarify_budget,
-    ask_budget_details,
-    parse_budget_details,
-    create_budget_node,
-    insert_expense_node,
-    deduct_budget_node,
-    ask_confirmation,
-    insufficient_budget_funds,
-    ask_add_funds,
-    parse_add_funds,
-    add_funds_node,
-)
+from agents.expense.nodes.expenses import ExpensesNode
+from agents.expense.nodes.categories import CategoriesNode
+from agents.expense.nodes.budgets import BudgetsNode
 from agents.expense.routers import start_router, action_router
 
 builder = StateGraph(ExpenseState)
 
+expenses = ExpensesNode()
+categories = CategoriesNode()
+budgets = BudgetsNode()
+
 # Define nodes
 nodes = {
-    "parse_input": parse_input,
-    "resolve_category": resolve_category,
-    "create_category": create_category_node,
-    "resolve_budget": resolve_budget,
-    "clarify_budget": clarify_budget,
-    "ask_budget_details": ask_budget_details,
-    "parse_budget_details": parse_budget_details,
-    "create_budget": create_budget_node,
-    "insert_expense": insert_expense_node,
-    "deduct_budget": deduct_budget_node,
-    "ask_confirmation": ask_confirmation,
-    "insufficient_funds": insufficient_budget_funds,
-    "ask_add_funds": ask_add_funds,
-    "parse_add_funds": parse_add_funds,
-    "add_funds": add_funds_node,
+    "parse_input": expenses.parse_input,
+    "resolve_category": categories.resolve_category,
+    "create_category": categories.create_category,
+    "resolve_budget": budgets.resolve_budget,
+    "clarify_budget": budgets.clarify_budget,
+    "ask_budget_details": budgets.ask_budget_details,
+    "parse_budget_details": budgets.parse_budget_details,
+    "create_budget": budgets.create_budget,
+    "insert_expense": expenses.insert_expense,
+    "deduct_budget": budgets.deduct_budget,
+    "ask_confirmation": expenses.ask_confirmation,
+    "insufficient_funds": budgets.insufficient_budget_funds,
+    "ask_add_funds": budgets.ask_add_funds,
+    "parse_add_funds": budgets.parse_add_funds,
+    "add_funds": budgets.add_funds,
 }
 
 for name, node_func in nodes.items():

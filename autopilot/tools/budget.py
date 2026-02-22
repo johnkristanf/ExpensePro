@@ -27,7 +27,7 @@ async def get_all_budgets() -> list:
 
 
 @tool
-async def get_budgets_by_name(name_query: str) -> dict:
+async def get_budgets_by_name(name_query: str) -> dict | str:
     """
     Searches for budgets by name using a case-insensitive partial match.
 
@@ -37,12 +37,12 @@ async def get_budgets_by_name(name_query: str) -> dict:
     query = """
     SELECT id, name, current_amount, total_amount, budget_period 
     FROM public.budgets 
-    WHERE name ILIKE $1;
+    WHERE name ILIKE $1
+    LIMIT 1;
     """
 
-    # Add wildcards for partial match
+    # Add wildcards for partial match 
     search_param = f"%{name_query}%"
-
     try:
         async with Database.get_async_session() as conn:
             row = await conn.fetchrow(query, search_param)
@@ -57,7 +57,7 @@ async def get_budgets_by_name(name_query: str) -> dict:
 
 
 @tool
-async def create_budget(name: str, total_amount: float, budget_period: str) -> str:
+async def create_budget(name: str, total_amount: float, budget_period: str) -> dict | str:
     """
     Creates a new budget in the database.
 
@@ -69,7 +69,7 @@ async def create_budget(name: str, total_amount: float, budget_period: str) -> s
     query = """
     INSERT INTO public.budgets (name, current_amount, total_amount, budget_period, created_at, updated_at)
     VALUES ($1, $2, $3, $4::date, NOW(), NOW())
-    RETURNING id;
+    RETURNING id, name;
     """
     try:
         # Convert string date to date object
@@ -79,14 +79,14 @@ async def create_budget(name: str, total_amount: float, budget_period: str) -> s
             budget_period_date = budget_period
 
         async with Database.get_async_session() as conn:
-            budget_id = await conn.fetchval(
+            row = await conn.fetchrow(
                 query,
                 name,
                 float(total_amount), # total amount becomes current upon creation
                 float(total_amount),
                 budget_period_date,
             )
-            return f"Successfully created budget '{name}' with ID: {budget_id}"
+            return {"id": row["id"], "name": row["name"], "message": f"Successfully created budget '{name}'"}
     except Exception as e:
         return f"Error creating budget: {str(e)}"
 

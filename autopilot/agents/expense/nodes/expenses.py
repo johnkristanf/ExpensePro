@@ -3,6 +3,7 @@ from agents.expense.models import load_expense_parser_model
 from agents.expense.state import ExpenseState
 from agents.expense.services import ExpenseService
 
+
 class ExpensesNode:
     async def parse_input(self, state: ExpenseState):
         system_message = ExpenseService.get_parsing_system_message()
@@ -10,9 +11,11 @@ class ExpensesNode:
 
         result = await load_expense_parser_model().ainvoke(messages)
         parsed_expenses = getattr(result, "parsed_expenses", None)
-        
+
         current_index = state.get("current_index", 0)
-        return ExpenseService.extract_and_validate_expense(parsed_expenses, current_index)
+        return ExpenseService.extract_and_validate_expense(
+            parsed_expenses, current_index
+        )
 
     async def ask_confirmation(self, state: ExpenseState):
         msg = (

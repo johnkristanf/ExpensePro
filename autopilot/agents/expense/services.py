@@ -2,13 +2,14 @@ from datetime import datetime
 from langchain_core.messages import SystemMessage, RemoveMessage
 from agents.expense.state import ExpenseState
 
+
 class ExpenseService:
     @staticmethod
     def get_parsing_system_message() -> SystemMessage:
         """Loads and formats the finance prompt into a SystemMessage."""
         with open("prompts/finance.md", "r") as f:
             system_prompt_template = f.read()
-        
+
         current_date = datetime.now().strftime("%Y-%m-%d")
         system_prompt = system_prompt_template.format(current_date=current_date)
         return SystemMessage(content=system_prompt)
@@ -16,7 +17,11 @@ class ExpenseService:
     @staticmethod
     def extract_and_validate_expense(parsed_expenses: list, current_index: int) -> dict:
         """Extracts an expense item from the list and validates required fields."""
-        if not parsed_expenses or not isinstance(parsed_expenses, list) or not (0 <= current_index < len(parsed_expenses)):
+        if (
+            not parsed_expenses
+            or not isinstance(parsed_expenses, list)
+            or not (0 <= current_index < len(parsed_expenses))
+        ):
             return {
                 "response": "Failed to extract valid expense data from input.",
                 "action": "end",
@@ -24,7 +29,11 @@ class ExpenseService:
 
         expense_item = parsed_expenses[current_index]
         required_fields = ["description", "amount", "date_spent"]
-        missing_fields = [field for field in required_fields if getattr(expense_item, field, None) is None]
+        missing_fields = [
+            field
+            for field in required_fields
+            if getattr(expense_item, field, None) is None
+        ]
 
         if missing_fields:
             return {
@@ -71,5 +80,5 @@ class ExpenseService:
 
         # All done, clean up messages
         messages = state.get("messages", [])
-        removals = [RemoveMessage(id=m.id) for m in messages if hasattr(m, 'id')]
+        removals = [RemoveMessage(id=m.id) for m in messages if hasattr(m, "id")]
         return {"response": result_msg, "action": "end", "messages": removals}

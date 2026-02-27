@@ -96,7 +96,7 @@ builder.add_conditional_edges(
         "wait_budget_details": "ask_budget_details",
         "parse_budget_details": "parse_budget_details",
         "end": END,
-    }, 
+    },
 )
 builder.add_edge("ask_confirmation", "deduct_budget")
 builder.add_conditional_edges(

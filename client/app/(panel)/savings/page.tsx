@@ -124,7 +124,13 @@ export default function SavingsPage() {
                             placeholder: 'e.g. Emergency Fund, Laptop',
                         },
 
-
+                        {
+                            name: 'current_amount',
+                            label: 'Current Amount',
+                            type: InputType.INPUT,
+                            inputType: FieldInputType.NUMBER,
+                        },
+                        
 
                         {
                             name: 'target_amount',
@@ -132,6 +138,8 @@ export default function SavingsPage() {
                             type: InputType.INPUT,
                             inputType: FieldInputType.NUMBER,
                         },
+
+                       
 
                         {
                             name: 'start_date',

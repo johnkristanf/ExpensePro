@@ -16,6 +16,10 @@ import { columns as getColumns } from './column'
 import { fetchExpenses } from '@/lib/api/expenses/get'
 import { fetchBudgets } from '@/lib/api/budgets/get'
 import { BudgetFetchComponent } from '@/enums/budgets'
+import { useState, useMemo } from 'react'
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
+import { Input } from '@/components/ui/input'
+import { Label } from '@/components/ui/label'
 
 export default function ExpensesPage() {
     const queryClient = useQueryClient()
@@ -75,12 +79,83 @@ export default function ExpensesPage() {
     const handleDeleteExpense = (id: number) => {
         deleteMutation.mutate(id)
     }
+
+    // FILTERS
+    const [budgetFilter, setBudgetFilter] = useState<string>('all')
+    const [spendingTypeFilter, setSpendingTypeFilter] = useState<string>('all')
+    const [dateFromFilter, setDateFromFilter] = useState<string>('')
+    const [dateToFilter, setDateToFilter] = useState<string>('')
+
+    const filteredExpenses = useMemo(() => {
+        if (!expenses) return []
+        return expenses.filter((expense) => {
+            if (budgetFilter !== 'all' && expense.budgets?.id?.toString() !== budgetFilter) return false
+            if (spendingTypeFilter !== 'all' && expense.spending_type !== spendingTypeFilter) return false
+            if (dateFromFilter && expense.date_spent < dateFromFilter) return false
+            if (dateToFilter && expense.date_spent > dateToFilter) return false
+            return true
+        })
+    }, [expenses, budgetFilter, spendingTypeFilter, dateFromFilter, dateToFilter])
+
     return (
         <div className="container mx-auto py-5">
             <PageTitle title="Expenses" />
 
-            {/* ADD NEW EXPSENSE */}
-            <div className="flex justify-end mb-3">
+            {/* FILTERS & ADD NEW EXPENSE */}
+            <div className="flex flex-col md:flex-row justify-end items-end mb-6 gap-4">
+                <div className="flex flex-wrap items-end justify-end gap-4 w-full md:w-auto">
+                    <div className="space-y-1">
+                        <Label>Budget</Label>
+                        <Select value={budgetFilter} onValueChange={setBudgetFilter}>
+                            <SelectTrigger className="w-[180px]">
+                                <SelectValue placeholder="All Budgets" />
+                            </SelectTrigger>
+                            <SelectContent>
+                                <SelectItem value="all">All Budgets</SelectItem>
+                                {budgets?.map((budget) => (
+                                    <SelectItem key={budget.id} value={budget.id.toString()}>
+                                        {budget.name}
+                                    </SelectItem>
+                                ))}
+                            </SelectContent>
+                        </Select>
+                    </div>
+
+                    <div className="space-y-1">
+                        <Label>Spending Type</Label>
+                        <Select value={spendingTypeFilter} onValueChange={setSpendingTypeFilter}>
+                            <SelectTrigger className="w-[150px]">
+                                <SelectValue placeholder="All Types" />
+                            </SelectTrigger>
+                            <SelectContent>
+                                <SelectItem value="all">All Types</SelectItem>
+                                <SelectItem value={SpendingType.WANTS}>Wants</SelectItem>
+                                <SelectItem value={SpendingType.NEEDS}>Needs</SelectItem>
+                            </SelectContent>
+                        </Select>
+                    </div>
+
+                    <div className="space-y-1">
+                        <Label>Date From</Label>
+                        <Input 
+                            type="date" 
+                            value={dateFromFilter} 
+                            onChange={(e) => setDateFromFilter(e.target.value)}
+                            className="w-[150px]"
+                        />
+                    </div>
+
+                    <div className="space-y-1">
+                        <Label>Date To</Label>
+                        <Input 
+                            type="date" 
+                            value={dateToFilter} 
+                            onChange={(e) => setDateToFilter(e.target.value)}
+                            className="w-[150px]"
+                        />
+                    </div>
+                </div>
+
                 <FormDialog
                     triggerLabel="Create Expense"
                     title="New Expense"
@@ -149,7 +224,7 @@ export default function ExpensesPage() {
                     <TextLoader text="Loading Expenses..." />
                 </div>
             ) : (
-                <DataTable columns={getColumns(handleDeleteExpense)} data={expenses} />
+                <DataTable columns={getColumns(handleDeleteExpense)} data={filteredExpenses} />
             )}
         </div>
     )

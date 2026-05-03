@@ -16,10 +16,13 @@ export async function adjustBudgetBalance(
     id: number,
     amount: number,
     type: 'increment' | 'decrement',
+    accountId?: number,
+    reason?: string
 ): Promise<any> {
-    const response = await api.patch(`/budgets/${id}/adjust`, {
-        amount,
-        type,
-    })
+    const payload: any = { amount, type }
+    if (accountId) payload.account_id = accountId
+    if (reason) payload.reason = reason
+
+    const response = await api.patch(`/budgets/${id}/adjust`, payload)
     return response.data
 }

@@ -19,6 +19,7 @@ import { FieldSchema } from '@/types/form'
 import EditFormDialog from '@/components/edit-form-dialog'
 import { editSavings } from '@/lib/api/savings/patch'
 import AdjustmentDialog from '@/components/adjustment-dialog'
+import LogHistoryDialog from '@/components/log-history-dialog'
 
 export default function SavingsPage() {
     const queryClient = useQueryClient()
@@ -125,21 +126,11 @@ export default function SavingsPage() {
                         },
 
                         {
-                            name: 'current_amount',
-                            label: 'Current Amount',
-                            type: InputType.INPUT,
-                            inputType: FieldInputType.NUMBER,
-                        },
-                        
-
-                        {
                             name: 'target_amount',
                             label: 'Target Amount',
                             type: InputType.INPUT,
                             inputType: FieldInputType.NUMBER,
                         },
-
-                       
 
                         {
                             name: 'start_date',
@@ -213,6 +204,11 @@ export default function SavingsPage() {
                                             onSubmit={(data) =>
                                                 handleEditSaving({ id: saving.id, ...data })
                                             }
+                                        />
+                                        <LogHistoryDialog
+                                            domain="savings"
+                                            id={saving.id}
+                                            name={saving.goal_name}
                                         />
                                         <Trash className="size-4 text-red-800" />
                                     </div>

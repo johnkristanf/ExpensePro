@@ -3,9 +3,11 @@
 namespace App\Http\Controllers;
 
 use App\Models\Budgets;
+use App\Models\Account;
 use Exception;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
 
 class BudgetsController extends Controller
@@ -40,7 +42,7 @@ class BudgetsController extends Controller
 
         $budget = Budgets::create([
             'name' => $validated['name'],
-            'current_amount' => $validated['total_amount'], // initial current_amount upon budget creation
+            'current_amount' => 0, // Default to 0, use adjustments to add funds
             'total_amount' => $validated['total_amount'],
             'budget_period' => $validated['budget_period'],
         ]);
@@ -102,11 +104,15 @@ class BudgetsController extends Controller
             $validated = $request->validate([
                 'amount' => 'required|numeric|min:0.01',
                 'type' => 'required|in:increment,decrement',
+                'account_id' => 'required_if:type,increment|exists:accounts,id',
+                'reason' => 'required_if:type,decrement|string|max:255',
             ]);
 
             $budget = Budgets::findOrFail($id);
             $amount = $validated['amount'];
             $type = $validated['type'];
+
+            DB::beginTransaction();
 
             if ($type === 'decrement') {
                 if ($budget->current_amount - $amount < 0) {
@@ -115,9 +121,33 @@ class BudgetsController extends Controller
                     ], 400);
                 }
                 $budget->decrement('current_amount', $amount);
+
+                $budget->adjustmentLogs()->create([
+                    'user_id' => auth()->id(),
+                    'type' => 'decrement',
+                    'amount' => $amount,
+                    'reason' => $validated['reason'] ?? null,
+                ]);
             } else {
+                $account = Account::where('id', $validated['account_id'])->where('user_id', auth()->id())->firstOrFail();
+                if ($account->balance - $amount < 0) {
+                    return response()->json([
+                        'message' => 'Insufficient account balance for this addition.',
+                    ], 400);
+                }
+                
+                $account->decrement('balance', $amount);
                 $budget->increment('current_amount', $amount);
+
+                $budget->adjustmentLogs()->create([
+                    'user_id' => auth()->id(),
+                    'type' => 'increment',
+                    'amount' => $amount,
+                    'account_id' => $account->id,
+                ]);
             }
+
+            DB::commit();
 
             return response()->json([
                 'message' => 'Budget adjusted successfully.',
@@ -125,12 +155,14 @@ class BudgetsController extends Controller
             ]);
 
         } catch (ValidationException $e) {
+             DB::rollBack();
              return response()->json([
                 'error' => 'Validation Error',
                 'messages' => $e->errors(),
             ], 422);
 
         } catch (Exception $e) {
+            DB::rollBack();
             Log::error("Failed to adjust budget balance", [
                 'error' => $e->getMessage(),
                 'budget_id' => $id

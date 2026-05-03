@@ -20,6 +20,7 @@ import { editBudget } from '@/lib/api/budgets/patch'
 import { Trash } from 'lucide-react'
 import { budgetToFieldSchemas } from '@/lib/helpers/field-mapping'
 import AdjustmentDialog from '@/components/adjustment-dialog'
+import LogHistoryDialog from '@/components/log-history-dialog'
 
 export default function BudgetsPage() {
     const queryClient = useQueryClient()
@@ -140,6 +141,11 @@ export default function BudgetsPage() {
                                             type="decrement"
                                             domain="budget"
                                         />
+                                        <LogHistoryDialog
+                                            domain="budgets"
+                                            id={budget.id}
+                                            name={budget.name}
+                                        />
                                         <EditFormDialog
                                             title="Edit Budget"
                                             fields={budgetToFieldSchemas(budget)}
@@ -147,6 +153,7 @@ export default function BudgetsPage() {
                                                 handleEditBudget({ id: budget.id, ...data })
                                             }
                                         />
+
                                         <Trash className="size-4 text-red-800" />
                                     </div>
                                 </CardAction>

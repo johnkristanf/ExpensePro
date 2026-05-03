@@ -10,7 +10,7 @@ import {
     Wallet,
     PiggyBank,
     TrendingUp,
-    LucideIcon
+    Landmark,
 } from 'lucide-react'
 
 import { SearchForm } from '@/components/search-form'
@@ -58,6 +58,11 @@ const data = {
                     icon: FolderTree,
                 },
 
+                {
+                    title: 'Accounts',
+                    url: '/accounts',
+                    icon: Landmark,
+                },
                 {
                     title: 'Budgets',
                     url: '/budgets',

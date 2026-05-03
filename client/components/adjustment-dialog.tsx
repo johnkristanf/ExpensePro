@@ -10,9 +10,12 @@ import {
 } from "@/components/ui/dialog"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { adjustBudgetBalance } from "@/lib/api/budgets/patch"
 import { adjustSavingsBalance } from "@/lib/api/savings/patch"
-import { useMutation, useQueryClient } from "@tanstack/react-query"
+import { adjustAccountBalance } from "@/lib/api/accounts/patch"
+import { fetchAccounts } from "@/lib/api/accounts/get"
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 import { Minus, Plus } from "lucide-react"
 import { useState } from "react"
 import { toast } from "sonner"
@@ -22,7 +25,7 @@ interface AdjustmentDialogProps {
     type: 'increment' | 'decrement'
     currentAmount: number
     name: string
-    domain: 'budget' | 'savings'
+    domain: 'budget' | 'savings' | 'accounts'
 }
 
 export default function AdjustmentDialog({
@@ -34,22 +37,39 @@ export default function AdjustmentDialog({
 }: AdjustmentDialogProps) {
     const [open, setOpen] = useState(false)
     const [amount, setAmount] = useState<string>('')
+    const [accountId, setAccountId] = useState<string>('')
+    const [reason, setReason] = useState<string>('')
     const queryClient = useQueryClient()
+
+    const { data: accounts } = useQuery({
+        queryKey: ['accounts'],
+        queryFn: fetchAccounts,
+        enabled: open && type === 'increment' && domain !== 'accounts',
+    })
 
     const mutation = useMutation({
         mutationFn: async (amountVal: number) => {
+            const accId = accountId ? parseInt(accountId) : undefined
             if (domain === 'budget') {
-                return adjustBudgetBalance(id, amountVal, type)
+                return adjustBudgetBalance(id, amountVal, type, accId, reason)
+            } else if (domain === 'savings') {
+                return adjustSavingsBalance(id, amountVal, type, accId, reason)
             } else {
-                return adjustSavingsBalance(id, amountVal, type)
+                return adjustAccountBalance(id, amountVal, type)
             }
         },
         onSuccess: () => {
-            const entityName = domain === 'budget' ? 'Budget' : 'Savings'
+            const entityName = domain === 'budget' ? 'Budget' : domain === 'savings' ? 'Savings' : 'Account'
             toast.success(`${entityName} ${type === 'increment' ? 'added' : 'deducted'} successfully`)
             setOpen(false)
             setAmount('')
-            queryClient.invalidateQueries({ queryKey: [domain === 'budget' ? 'budgets' : 'savings'] })
+            setAccountId('')
+            setReason('')
+            const queryKey = domain === 'budget' ? 'budgets' : domain === 'savings' ? 'savings' : 'accounts'
+            queryClient.invalidateQueries({ queryKey: [queryKey] })
+            if (domain !== 'accounts' && type === 'increment') {
+                queryClient.invalidateQueries({ queryKey: ['accounts'] })
+            }
         },
         onError: (error: any) => {
             const message = error.response?.data?.message || error.message || `Failed to adjust ${domain}`
@@ -69,6 +89,17 @@ export default function AdjustmentDialog({
         if (type === 'decrement' && numAmount > currentAmount) {
             toast.error("Cannot deduct more than the available amount")
             return
+        }
+
+        if (domain !== 'accounts') {
+            if (type === 'increment' && !accountId) {
+                toast.error("Please select a source account")
+                return
+            }
+            if (type === 'decrement' && !reason.trim()) {
+                toast.error("Please provide a reason")
+                return
+            }
         }
 
         mutation.mutate(numAmount)
@@ -111,6 +142,42 @@ export default function AdjustmentDialog({
                                 autoFocus
                             />
                         </div>
+                        {domain !== 'accounts' && isIncrement && (
+                            <div className="grid grid-cols-4 items-center gap-4">
+                                <Label htmlFor="account" className="text-right">
+                                    Source
+                                </Label>
+                                <div className="col-span-3">
+                                    <Select value={accountId} onValueChange={setAccountId}>
+                                        <SelectTrigger>
+                                            <SelectValue placeholder="Select account" />
+                                        </SelectTrigger>
+                                        <SelectContent>
+                                            {accounts?.map((acc) => (
+                                                <SelectItem key={acc.id} value={acc.id.toString()}>
+                                                    {acc.name} (₱{acc.balance})
+                                                </SelectItem>
+                                            ))}
+                                        </SelectContent>
+                                    </Select>
+                                </div>
+                            </div>
+                        )}
+                        {domain !== 'accounts' && !isIncrement && (
+                            <div className="grid grid-cols-4 items-center gap-4">
+                                <Label htmlFor="reason" className="text-right">
+                                    Reason
+                                </Label>
+                                <Input
+                                    id="reason"
+                                    type="text"
+                                    value={reason}
+                                    onChange={(e) => setReason(e.target.value)}
+                                    className="col-span-3"
+                                    placeholder="e.g. Entered wrong amount"
+                                />
+                            </div>
+                        )}
                     </div>
                     <DialogFooter>
                         <Button type="submit" disabled={mutation.isPending}>

@@ -12,10 +12,13 @@ export async function adjustSavingsBalance(
     id: number,
     amount: number,
     type: 'increment' | 'decrement',
+    accountId?: number,
+    reason?: string
 ): Promise<any> {
-    const response = await api.patch(`/savings/${id}/adjust`, {
-        amount,
-        type,
-    })
+    const payload: any = { amount, type }
+    if (accountId) payload.account_id = accountId
+    if (reason) payload.reason = reason
+
+    const response = await api.patch(`/savings/${id}/adjust`, payload)
     return response.data
 }

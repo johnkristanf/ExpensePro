@@ -42,7 +42,7 @@ export function DashboardBarChart({ title, data }: DashboardChartProps) {
                 <CardTitle>{title}</CardTitle>
             </CardHeader>
             <CardContent>
-                <ChartContainer config={chartConfig}>
+                <ChartContainer config={chartConfig} className="aspect-auto h-[250px] w-full">
                     <BarChart accessibilityLayer data={normalizedData}>
                         <CartesianGrid vertical={false} />
                         <XAxis

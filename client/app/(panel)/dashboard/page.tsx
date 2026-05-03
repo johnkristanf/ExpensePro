@@ -79,18 +79,22 @@ export default function DashboardPage() {
                 )}
 
                 {/* INCOME BAR CHART DATA */}
-                {isIncomeSourceLoading || !incomeSource ? (
-                    <BarChartSkeleton />
-                ) : (
-                    <DashboardBarChart title="Income Per Source" data={incomeSource} />
-                )}
+                <div className="md:col-span-2">
+                    {isIncomeSourceLoading || !incomeSource ? (
+                        <BarChartSkeleton />
+                    ) : (
+                        <DashboardBarChart title="Income Per Source" data={incomeSource} />
+                    )}
+                </div>
 
                 {/* EXPENSES BAR CHART DATA */}
-                {isExpensesCategoryLoading || !expensesCategory ? (
-                    <BarChartSkeleton />
-                ) : (
-                    <DashboardBarChart title="Expenses per Category" data={expensesCategory} />
-                )}
+                <div className="md:col-span-2">
+                    {isExpensesCategoryLoading || !expensesCategory ? (
+                        <BarChartSkeleton />
+                    ) : (
+                        <DashboardBarChart title="Expenses per Category" data={expensesCategory} />
+                    )}
+                </div>
             </div>
         </div>
     )

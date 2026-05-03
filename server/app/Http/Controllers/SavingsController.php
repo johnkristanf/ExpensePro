@@ -3,9 +3,11 @@
 namespace App\Http\Controllers;
 
 use App\Models\Savings;
+use App\Models\Account;
 use Exception;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
 
 class SavingsController extends Controller
@@ -25,10 +27,12 @@ class SavingsController extends Controller
         $validated = $request->validate([
             'goal_name' => 'required|string|max:255',
             'target_amount' => 'required|numeric|min:0',
-            'current_amount' => 'required|numeric|min:0',
+            'current_amount' => 'nullable|numeric|min:0',
             'start_date' => 'required|date',
             'target_date' => 'required|date|after_or_equal:start_date',
         ]);
+
+        $validated['current_amount'] = $validated['current_amount'] ?? 0;
 
         $savings = Savings::create($validated);
 
@@ -80,11 +84,15 @@ class SavingsController extends Controller
             $validated = $request->validate([
                 'amount' => 'required|numeric|min:0.01',
                 'type' => 'required|in:increment,decrement',
+                'account_id' => 'required_if:type,increment|exists:accounts,id',
+                'reason' => 'required_if:type,decrement|string|max:255',
             ]);
 
             $saving = Savings::findOrFail($id);
             $amount = $validated['amount'];
             $type = $validated['type'];
+
+            DB::beginTransaction();
 
             if ($type === 'decrement') {
                 if ($saving->current_amount - $amount < 0) {
@@ -93,9 +101,33 @@ class SavingsController extends Controller
                     ], 400);
                 }
                 $saving->decrement('current_amount', $amount);
+
+                $saving->adjustmentLogs()->create([
+                    'user_id' => auth()->id(),
+                    'type' => 'decrement',
+                    'amount' => $amount,
+                    'reason' => $validated['reason'] ?? null,
+                ]);
             } else {
+                $account = Account::where('id', $validated['account_id'])->where('user_id', auth()->id())->firstOrFail();
+                if ($account->balance - $amount < 0) {
+                    return response()->json([
+                        'message' => 'Insufficient account balance for this addition.',
+                    ], 400);
+                }
+                
+                $account->decrement('balance', $amount);
                 $saving->increment('current_amount', $amount);
+
+                $saving->adjustmentLogs()->create([
+                    'user_id' => auth()->id(),
+                    'type' => 'increment',
+                    'amount' => $amount,
+                    'account_id' => $account->id,
+                ]);
             }
+
+            DB::commit();
 
             return response()->json([
                 'message' => 'Savings adjusted successfully.',
@@ -103,12 +135,14 @@ class SavingsController extends Controller
             ]);
 
         } catch (ValidationException $e) {
+             DB::rollBack();
              return response()->json([
                 'error' => 'Validation Error',
                 'messages' => $e->errors(),
             ], 422);
 
         } catch (Exception $e) {
+            DB::rollBack();
             Log::error("Failed to adjust savings balance", [
                 'error' => $e->getMessage(),
                 'saving_id' => $id

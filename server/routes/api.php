@@ -1,11 +1,13 @@
 <?php
 
+use App\Http\Controllers\AccountsController;
 use App\Http\Controllers\BudgetsController;
 use App\Http\Controllers\CategoriesController;
 use App\Http\Controllers\ExpensesController;
 use App\Http\Controllers\ExpensePromptController;
 use App\Http\Controllers\IncomeController;
 use App\Http\Controllers\SavingsController;
+use App\Http\Controllers\AdjustmentLogsController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 
@@ -43,4 +45,11 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::patch('/expense-prompts/{id}', [ExpensePromptController::class, 'update']);
     Route::delete('/expense-prompts/{id}', [ExpensePromptController::class, 'destroy']);
 
+    Route::get('/accounts', [AccountsController::class, 'index']);
+    Route::post('/accounts', [AccountsController::class, 'store']);
+    Route::patch('/accounts/{id}', [AccountsController::class, 'update']);
+    Route::delete('/accounts/{id}', [AccountsController::class, 'destroy']);
+    Route::patch('/accounts/{id}/adjust', [AccountsController::class, 'adjustBalance']);
+
+    Route::get('/{domain}/{id}/logs', [AdjustmentLogsController::class, 'index']);
 });
